@@ -1,0 +1,54 @@
+{
+    "name": "statikbe/laravel-chained-translator",
+    "description": "The Laravel Chained Translator can combine several translators that can override each others translations.",
+    "license": "MIT",
+    "keywords": [
+        "statikbe",
+        "laravel",
+        "statik",
+        "translations",
+        "customer",
+        "content manager",
+        "custom",
+        "chained",
+        "chain"
+    ],
+    "autoload": {
+        "psr-4": {
+            "Statikbe\\LaravelChainedTranslator\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Kobe Christiaensen",
+            "email": "kobe@statik.be"
+        },
+        {
+            "name": "Sten Govaerts",
+            "email": "sten@statik.be"
+        },
+        {
+            "name": "Johan Maes",
+            "email": "johan@statik.be"
+        },
+        {
+            "name": "Kayalion"
+        }
+    ],
+    "require": {
+        "php": ">=7.2.0",
+        "illuminate/container": "^5.8|^6.0|^7.0",
+        "illuminate/contracts": "^5.8|^6.0|^7.0",
+        "illuminate/filesystem": "^5.8|^6.0|^7.0",
+        "illuminate/support": "^5.8|^6.0|^7.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Statikbe\\LaravelChainedTranslator\\TranslationServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
