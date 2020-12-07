@@ -37,10 +37,10 @@
     ],
     "require": {
         "php": ">=7.2.0",
-        "illuminate/container": "^5.8|^6.0|^7.0",
-        "illuminate/contracts": "^5.8|^6.0|^7.0",
-        "illuminate/filesystem": "^5.8|^6.0|^7.0",
-        "illuminate/support": "^5.8|^6.0|^7.0"
+        "illuminate/container": "^5.8|^6.0|^7.0|^8.0",
+        "illuminate/contracts": "^5.8|^6.0|^7.0|^8.0",
+        "illuminate/filesystem": "^5.8|^6.0|^7.0|^8.0",
+        "illuminate/support": "^5.8|^6.0|^7.0|^8.0"
     },
     "extra": {
         "laravel": {
