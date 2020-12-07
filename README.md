@@ -1,4 +1,4 @@
-#Laravel Chained Translator
+# Laravel Chained Translator
 
 The chained translator can combine several translators that can override each others translations. Typically at some 
 point during the development phase, a content manager wants to translate or finetune the translation strings added by
@@ -15,7 +15,7 @@ For instance, the default translations created by developers are written in the 
 key exists in the `resources\lang-custom` directory, this is preferred, otherwise we fallback to the default 
 translations. 
 
-The package works together with a Laravel Nova tool that provides a UI to let content managers edit translations.
+The package works together with our [Laravel Nova Chained Translation Manager](https://github.com/statikbe/laravel-nova-chained-translation-manager) that provides a UI to let content managers edit translations.
 
 ## Installation
 
@@ -35,7 +35,6 @@ php artisan vendor:publish --provider="Statikbe\LaravelChainedTranslator\Transla
 By default, the custom translations are saved in `resources/lang-custom`. This can be configured in 
 `laravel-chained-translator.php` configuration file with the key: `custom_lang_directory_name`
 
-##TODOs
+## TODO's
 
 - support for JSON translation files
-- publish service provider
