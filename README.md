@@ -31,10 +31,26 @@ You can publish the configuration by running this command:
 php artisan vendor:publish --provider="Statikbe\LaravelChainedTranslator\TranslationServiceProvider"
 ```
 
-### Custom lang directory
+The following configuration fields are available:
+
+- __Custom lang directory__:
 By default, the custom translations are saved in `resources/lang-custom`. This can be configured in 
 `laravel-chained-translator.php` configuration file with the key: `custom_lang_directory_name`
 
+- __Add .gitignore to custom lang directory__: 
+If the config key `add_gitignore_to_custom_lang_directory` is set to true, a .gitignore file is added to the custom 
+language directory.
+ 
 ## TODO's
 
 - support for JSON translation files
+
+## Credits
+
+We used [Joe Dixon's](https://github.com/joedixon) translation libraries as a source of technical expertise and inspiration:
+- [Laravel Translation](https://github.com/joedixon/laravel-translation)
+
+Thanks a lot for the great work!
+
+## License
+The MIT License (MIT). Please see [license file](LICENSE.md) for more information.

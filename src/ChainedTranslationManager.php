@@ -169,14 +169,8 @@ class ChainedTranslationManager
         ksort($translations);
         $translations = array_undot($translations);
 
-        //TODO: add boolean to create folder if not exists
-        $groupBasePath = $this->getGroupBasePath($locale, $group);
         $groupPath = $this->getGroupPath($locale, $group);
 
-        // TODO add this if clause to getGroupBasePath with a boolean flag to trigger it.
-        if(!$this->files->exists($groupBasePath)){
-            $this->files->makeDirectory($groupBasePath,  0755, true);
-        }
         $this->files->put($groupPath, "<?php\n\nreturn ".var_export($translations, true).';'.\PHP_EOL);
     }
 
@@ -199,6 +193,13 @@ class ChainedTranslationManager
             return $this->path.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.$namespace.DIRECTORY_SEPARATOR.$locale;
         }
 
-        return $this->path.DIRECTORY_SEPARATOR.$locale;
+        $groupBasePath = $this->path.DIRECTORY_SEPARATOR.$locale;
+
+        //create directory if not exists:
+        if(!$this->files->exists($groupBasePath)){
+            $this->files->makeDirectory($groupBasePath,  0755, true);
+        }
+
+        return $groupBasePath;
     }
 }
