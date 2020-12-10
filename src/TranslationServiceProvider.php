@@ -26,7 +26,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider {
             }
         }
 
-        $this->app->singleton('chained-translator.manager', function ($app) {
+        $this->app->singleton(ChainedTranslationManager::class, function ($app) {
             return new ChainedTranslationManager($app['files'],
                 $app['translation.loader'],
                 $app['chained-translator.path.lang.custom']);
