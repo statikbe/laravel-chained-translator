@@ -12,7 +12,7 @@ translations).
 
 For instance, the default translations created by developers are written in the default Laravel `lang` directory in
 `resources/lang`, and the translations by the content manager are added to `resources/lang-custom`. When a translation 
-key exists in the `resources\lang-custom` directory, this is preferred, otherwise we fallback to the default 
+key exists in the `resources/lang-custom` directory, this is preferred, otherwise we fallback to the default 
 translations. 
 
 The package works together with our [Laravel Nova Chained Translation Manager](https://github.com/statikbe/laravel-nova-chained-translation-manager) that provides a UI to let content managers edit translations.
@@ -41,9 +41,13 @@ By default, the custom translations are saved in `resources/lang-custom`. This c
 If the config key `add_gitignore_to_custom_lang_directory` is set to true, a .gitignore file is added to the custom 
 language directory.
  
-## TODO's
+## TODO's & Ideas
 
 - support for JSON translation files
+- command to copy translations from the `lang-custom` directory to the default `lang` directory to merge translations 
+back into version control.
+- option to overwrite the default `lang` directory. This could be useful on local and staging environments to manage the
+developer translations. 
 
 ## Credits
 
