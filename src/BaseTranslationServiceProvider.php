@@ -5,6 +5,7 @@
 
     use Illuminate\Translation\FileLoader;
     use Illuminate\Translation\TranslationServiceProvider as LaravelTranslationServiceProvider;
+    use Statikbe\LaravelChainedTranslator\Console\Commands\MergeTranslationsCommand;
 
     class BaseTranslationServiceProvider extends LaravelTranslationServiceProvider {
 
@@ -19,6 +20,13 @@
             $this->publishes([
                 __DIR__.'/../config/laravel-chained-translator.php' => config_path('laravel-chained-translator.php'),
             ], 'config');
+
+            //register commands:
+            if ($this->app->runningInConsole()) {
+                $this->commands([
+                    MergeTranslationsCommand::class,
+                ]);
+            }
         }
 
         /**

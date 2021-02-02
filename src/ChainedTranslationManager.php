@@ -5,6 +5,7 @@ namespace Statikbe\LaravelChainedTranslator;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\App;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
 use Symfony\Component\Finder\SplFileInfo;
@@ -126,6 +127,22 @@ class ChainedTranslationManager
         }
     }
 
+    public function mergeChainedTranslationsIntoDefaultTranslations(string $locale): void {
+        $defaultLangPath = App::get('path.lang');
+        if (! $this->localeFolderExists($locale)) {
+            $this->createLocaleFolder($locale);
+        }
+
+        $groups = $this->getTranslationGroups();
+
+        foreach($groups as $group){
+            $translations = $this->getGroupTranslations($locale, $group);
+            if ($translations->isNotEmpty()){
+                $this->saveGroupTranslations($locale, $group, $translations, $defaultLangPath);
+            }
+        }
+    }
+
     private function compressHierarchicalTranslationsToDotNotation(array $translations): array
     {
         $iteratorIterator = new RecursiveIteratorIterator(new RecursiveArrayIterator($translations));
@@ -161,22 +178,22 @@ class ChainedTranslationManager
         return collect([]);
     }
 
-    private function saveGroupTranslations(string $locale, string $group, Collection $translations): void
+    private function saveGroupTranslations(string $locale, string $group, Collection $translations, string $languagePath=null): void
     {
         // here we check if it's a namespaced translation which need saving to a
         // different path
         $translations = $translations->toArray();
-        ksort($translations);
         $translations = array_undot($translations);
+        ksort($translations);
 
-        $groupPath = $this->getGroupPath($locale, $group);
+        $groupPath = $this->getGroupPath($locale, $group, $languagePath);
 
         $this->files->put($groupPath, "<?php\n\nreturn ".var_export($translations, true).';'.\PHP_EOL);
     }
 
-    private function getGroupPath(string $locale, string $group): string
+    private function getGroupPath(string $locale, string $group, string $languagePath=null): string
     {
-        $basePath = $this->getGroupBasePath($locale, $group);
+        $basePath = $this->getGroupBasePath($locale, $group, $languagePath);
 
         if (Str::contains($group, '/')){
             [$namespace, $group] = explode('/', $group);
@@ -185,21 +202,29 @@ class ChainedTranslationManager
         return $basePath.DIRECTORY_SEPARATOR.$group.'.php';
     }
 
-    private function getGroupBasePath(string $locale, string $group): string
+    private function getGroupBasePath(string $locale, string $group, string $languagePath=null): string
     {
+        $languagePath = ($languagePath ?? $this->path);
         if (Str::contains($group, '/')){
             [$namespace, $group] = explode('/', $group);
 
-            return $this->path.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.$namespace.DIRECTORY_SEPARATOR.$locale;
+            $groupBasePath = $languagePath.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.$namespace.DIRECTORY_SEPARATOR.$locale;
+            $this->createDirectory($groupBasePath);
+            return $groupBasePath;
         }
 
-        $groupBasePath = $this->path.DIRECTORY_SEPARATOR.$locale;
+        $groupBasePath = $languagePath.DIRECTORY_SEPARATOR.$locale;
 
         //create directory if not exists:
-        if(!$this->files->exists($groupBasePath)){
-            $this->files->makeDirectory($groupBasePath,  0755, true);
-        }
+        $this->createDirectory($groupBasePath);
 
         return $groupBasePath;
+    }
+
+    private function createDirectory(string $path): void
+    {
+        if(!$this->files->exists($path)){
+            $this->files->makeDirectory($path,  0755, true);
+        }
     }
 }
