@@ -9,7 +9,6 @@ use Illuminate\Contracts\Translation\Loader;
  */
 class ChainLoader implements Loader
 {
-
     /**
      * Loader instances of the chain
      *
