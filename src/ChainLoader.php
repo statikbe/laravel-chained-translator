@@ -74,7 +74,7 @@ class ChainLoader implements Loader
         $messages = [];
 
         foreach ($this->loaders as $loader) {
-            $messages += $loader->load($locale, $group, $namespace);
+            $messages = array_replace_recursive($loader->load($locale, $group, $namespace), $messages);
         }
 
         return $messages;
