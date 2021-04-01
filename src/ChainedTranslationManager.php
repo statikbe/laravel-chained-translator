@@ -2,6 +2,7 @@
 
 namespace Statikbe\LaravelChainedTranslator;
 
+use Brick\VarExporter\VarExporter;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -173,7 +174,7 @@ class ChainedTranslationManager
 
         $groupPath = $this->getGroupPath($locale, $group);
 
-        $this->files->put($groupPath, "<?php\n\nreturn ".var_export($translations, true).';'.\PHP_EOL);
+        $this->files->put($groupPath, "<?php\n\nreturn " . VarExporter::export($translations) . ';' . \PHP_EOL);
     }
 
     private function getGroupPath(string $locale, string $group): string
