@@ -12,8 +12,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider {
      * @return void
      */
     public function register() {
-        parent::register();
-
+        // first add the lang custom dir because other dependencies need this
         $this->app->instance('chained-translator.path.lang.custom',
                              $this->app->resourcePath(config('laravel-chained-translator.custom_lang_directory_name', 'lang-custom')));
         //create custom language directory and add .gitignore file to avoid commits of customer translations:
@@ -26,6 +25,10 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider {
             }
         }
 
+        // add the parent dependencies
+        parent::register();
+
+        // add the chained translation manager who needs parent dependencies
         $this->app->singleton(ChainedTranslationManager::class, function ($app) {
             return new ChainedTranslationManager($app['files'],
                 $app['translation.loader'],
