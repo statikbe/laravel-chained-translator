@@ -35,4 +35,15 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider {
                 $app['chained-translator.path.lang.custom']);
         });
     }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        $providedServices = parent::provides();
+        return array_merge($providedServices, ['chained-translator.path.lang.custom', ChainedTranslationManager::class]);
+    }
 }
