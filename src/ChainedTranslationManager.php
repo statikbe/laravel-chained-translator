@@ -2,6 +2,7 @@
 
 namespace Statikbe\LaravelChainedTranslator;
 
+use Brick\VarExporter\VarExporter;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -77,7 +78,7 @@ class ChainedTranslationManager
         $langDirPath = resource_path('lang');
         $filesAndDirs = $this->files->allFiles($langDirPath);
         foreach ($filesAndDirs as $file) {
-            /* @var SplFileInfo $file */
+            /** @var SplFileInfo $file */
             if (!$file->isDir()) {
                 $group = null;
                 $vendorPath = strstr($file->getRelativePath(), 'vendor');
@@ -129,14 +130,16 @@ class ChainedTranslationManager
     private function compressHierarchicalTranslationsToDotNotation(array $translations): array
     {
         $iteratorIterator = new RecursiveIteratorIterator(new RecursiveArrayIterator($translations));
-        $result = array();
+        $result = [];
         foreach ($iteratorIterator as $leafValue) {
-            $keys = array();
+            $keys = [];
             foreach (range(0, $iteratorIterator->getDepth()) as $depth) {
                 $keys[] = $iteratorIterator->getSubIterator($depth)->key();
             }
+
             $result[ join('.', $keys) ] = $leafValue;
         }
+
         return $result;
     }
 
@@ -171,7 +174,7 @@ class ChainedTranslationManager
 
         $groupPath = $this->getGroupPath($locale, $group);
 
-        $this->files->put($groupPath, "<?php\n\nreturn ".var_export($translations, true).';'.\PHP_EOL);
+        $this->files->put($groupPath, "<?php\n\nreturn " . VarExporter::export($translations) . ';' . \PHP_EOL);
     }
 
     private function getGroupPath(string $locale, string $group): string
