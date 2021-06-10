@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\App;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
 use Symfony\Component\Finder\SplFileInfo;
+use Brick\VarExporter\VarExporter;
 
 class ChainedTranslationManager
 {
@@ -146,9 +147,9 @@ class ChainedTranslationManager
     private function compressHierarchicalTranslationsToDotNotation(array $translations): array
     {
         $iteratorIterator = new RecursiveIteratorIterator(new RecursiveArrayIterator($translations));
-        $result = array();
+        $result = [];
         foreach ($iteratorIterator as $leafValue) {
-            $keys = array();
+            $keys = [];
             foreach (range(0, $iteratorIterator->getDepth()) as $depth) {
                 $keys[] = $iteratorIterator->getSubIterator($depth)->key();
             }
@@ -188,7 +189,7 @@ class ChainedTranslationManager
 
         $groupPath = $this->getGroupPath($locale, $group, $languagePath);
 
-        $this->files->put($groupPath, "<?php\n\nreturn ".var_export($translations, true).';'.\PHP_EOL);
+        $this->files->put($groupPath, "<?php\n\nreturn " . VarExporter::export($translations) . ';' . \PHP_EOL);
     }
 
     private function getGroupPath(string $locale, string $group, string $languagePath=null): string

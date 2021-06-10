@@ -1,6 +1,5 @@
 <?php
 
-
     namespace Statikbe\LaravelChainedTranslator;
 
     use Illuminate\Translation\FileLoader;
@@ -40,12 +39,6 @@
                 __DIR__.'/../config/laravel-chained-translator.php', 'laravel-chained-translator'
             );
 
-            //load helpers:
-            $file = __DIR__ . '/Helpers/helpers.php';
-            if(file_exists($file)) {
-                require_once($file);
-            }
-
             parent::register();
         }
 
@@ -59,9 +52,11 @@
             $this->app->singleton('translation.loader.default', function ($app) {
                 return new FileLoader($app['files'], $app['path.lang']);
             });
+
             $this->app->singleton('translation.loader.custom', function ($app) {
                 return new FileLoader($app['files'], $app['chained-translator.path.lang.custom']);
             });
+
             //override the Laravel translation loader singleton:
             $this->app->singleton('translation.loader', function ($app) {
                 $loader = new ChainLoader();
@@ -72,13 +67,7 @@
             });
 
             //added here to make sure when we inject the class name in a constructor this singleton is used:
-            $this->app->singleton(ChainLoader::class, function ($app) {
-                $loader = new ChainLoader();
-                $loader->addLoader($app['translation.loader.custom']);
-                $loader->addLoader($app['translation.loader.default']);
-
-                return $loader;
-            });
+            $this->app->alias('translation.loader', ChainLoader::class);
         }
 
         /**
@@ -88,12 +77,10 @@
          */
         public function provides()
         {
-            $provides = parent::provides();
-
-            $provides[] = 'translation.loader.custom';
-            $provides[] = 'translation.loader.default';
-            $provides[] = 'translation.manager';
-
-            return $provides;
+            return array_merge(parent::provides(), [
+                'translation.loader.custom',
+                'translation.loader.default',
+                'translation.manager',
+            ]);
         }
     }

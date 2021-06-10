@@ -30,9 +30,11 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider {
 
         // add the chained translation manager who needs parent dependencies
         $this->app->singleton(ChainedTranslationManager::class, function ($app) {
-            return new ChainedTranslationManager($app['files'],
+            return new ChainedTranslationManager(
+                $app['files'],
                 $app['translation.loader'],
-                $app['chained-translator.path.lang.custom']);
+                $app['chained-translator.path.lang.custom']
+            );
         });
     }
 
@@ -43,7 +45,8 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider {
      */
     public function provides()
     {
-        $providedServices = parent::provides();
-        return array_merge($providedServices, ['chained-translator.path.lang.custom', ChainedTranslationManager::class]);
+        return array_merge(parent::provides(), [
+            'chained-translator.path.lang.custom', ChainedTranslationManager::class
+        ]);
     }
 }
