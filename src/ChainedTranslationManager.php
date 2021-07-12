@@ -4,12 +4,14 @@ namespace Statikbe\LaravelChainedTranslator;
 
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\App;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
 use Symfony\Component\Finder\SplFileInfo;
 use Brick\VarExporter\VarExporter;
+
 
 class ChainedTranslationManager
 {
@@ -188,7 +190,11 @@ class ChainedTranslationManager
         ksort($translations);
 
         $groupPath = $this->getGroupPath($locale, $group, $languagePath);
-
+        // clear the opcache of the group file, because otherwise in the next request, an old cached file can be read in
+        // and the saved translation can be overwritten...
+        if(function_exists('opcache_invalidate')) {
+            opcache_invalidate($groupPath, true);
+        }
         $this->files->put($groupPath, "<?php\n\nreturn " . VarExporter::export($translations) . ';' . \PHP_EOL);
     }
 
