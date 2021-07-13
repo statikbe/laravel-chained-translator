@@ -190,12 +190,13 @@ class ChainedTranslationManager
         ksort($translations);
 
         $groupPath = $this->getGroupPath($locale, $group, $languagePath);
+        $this->files->put($groupPath, "<?php\n\nreturn " . VarExporter::export($translations) . ';' . \PHP_EOL);
+
         // clear the opcache of the group file, because otherwise in the next request, an old cached file can be read in
         // and the saved translation can be overwritten...
         if(function_exists('opcache_invalidate')) {
             opcache_invalidate($groupPath, true);
         }
-        $this->files->put($groupPath, "<?php\n\nreturn " . VarExporter::export($translations) . ';' . \PHP_EOL);
     }
 
     private function getGroupPath(string $locale, string $group, string $languagePath=null): string
