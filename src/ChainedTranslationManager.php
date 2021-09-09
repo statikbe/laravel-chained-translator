@@ -135,11 +135,19 @@ class ChainedTranslationManager
         if (! $this->localeFolderExists($locale)) {
             $this->createLocaleFolder($locale);
         }
-
         $groups = $this->getTranslationGroups();
 
         foreach($groups as $group){
-            $translations = $this->getGroupTranslations($locale, $group);
+            if (Str::contains($group, '/')){
+                [$namespace, $groupWithoutNamespace] = explode('/', $group);
+            }
+
+            if ($group === 'single') { //Preparation for then json support is added
+                $translations = collect($this->translationLoader->load($locale, '*', '*'));
+            } else {
+                $translations = collect($this->translationLoader->load($locale, $groupWithoutNamespace ?? $group, $namespace ?? null));
+            }
+
             if ($translations->isNotEmpty()){
                 $this->saveGroupTranslations($locale, $group, $translations, $defaultLangPath);
             }
