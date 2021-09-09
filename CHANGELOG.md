@@ -2,7 +2,7 @@
 
 All notable changes to the __Laravel Chained Translator__ will be documented in this file.
 
-## Version 1.2.1
+## Version 1.3.2
 ### Fixed
 - Merge (custom-lang into lang) command not deleting translation keys anymore.
 ### Added
