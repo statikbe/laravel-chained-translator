@@ -1,6 +1,6 @@
 # Laravel Chained Translator
 
-The chained translator can combine several translators that can override each others translations. Typically at some 
+The chained translator can combine several translators that can override each others translations. Typically, at some 
 point during the development phase, a content manager wants to translate or finetune the translation strings added by
 developers. This often results in merge and versioning issues, when developers and content managers are working on
 the translation files at the same time.  
@@ -24,6 +24,22 @@ Via composer:
 composer require statikbe/laravel-chained-translator
 ```
 
+## Commands
+
+### Merge the custom translations back into the default translation files
+If you want to combine the translation files made in the current environment by the content manager with the default 
+translation files, you can use the following command. You need to pass the locale as a parameter, since this library is
+agnostic of the locales supported by your Laravel application. Laravel sadly does not have a default supported locales 
+list. So if you want to merge all files for all supported locales, run this command for each locale.
+
+For example, for French: 
+
+```shell script
+php artisan chainedtranslator:merge fr
+``` 
+
+This command can be useful to merge the translation work of a translator back into the default translation files. 
+
 ## Configuration
 
 You can publish the configuration by running this command:
@@ -44,8 +60,6 @@ language directory.
 ## TODO's & Ideas
 
 - support for JSON translation files
-- command to copy translations from the `lang-custom` directory to the default `lang` directory to merge translations 
-back into version control.
 - option to overwrite the default `lang` directory. This could be useful on local and staging environments to manage the
 developer translations. 
 

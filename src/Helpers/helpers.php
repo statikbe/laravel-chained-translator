@@ -2,10 +2,10 @@
 
 use Illuminate\Support\Arr;
 
-if (!function_exists('array_undot')) {
+if(!function_exists('array_undot'))
+{
     /**
      * Expands a list with keys with dots into a hierarchical list.
-     *
      * @param array $dotNotationArray
      * @return array
      */
@@ -21,7 +21,6 @@ if (!function_exists('array_undot')) {
                 Arr::set($array, $key, $value);
             }
         }
-
         return $array;
     }
 }
