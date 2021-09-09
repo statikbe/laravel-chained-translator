@@ -21,7 +21,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider {
             $fileSystem = $this->app->get('files');
             $fileSystem->makeDirectory($this->app->get('chained-translator.path.lang.custom'), 0755, true);
             if(config('laravel-chained-translator.add_gitignore_to_custom_lang_directory', true)) {
-                touch($this->app->get('chained-translator.path.lang.custom') . '/.gitignore');
+                $fileSystem->put($this->app->get('chained-translator.path.lang.custom') . '/.gitignore', "*\n!.gitignore\n");
             }
         }
 
