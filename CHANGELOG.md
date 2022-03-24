@@ -2,6 +2,10 @@
 
 All notable changes to the __Laravel Chained Translator__ will be documented in this file.
 
+## Version 2.0.0
+### Updated
+- Added support for Laravel 9 and the moved lang dir
+
 ## Version 1.3.2
 ### Fixed
 - Merge (custom-lang into lang) command not deleting translation keys anymore.

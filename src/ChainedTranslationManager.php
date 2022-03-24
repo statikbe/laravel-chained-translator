@@ -71,14 +71,14 @@ class ChainedTranslationManager
     }
 
     /**
-     * Returns a list of translation groups. A translation group is the file name of the PHP files in the resources/lang
+     * Returns a list of translation groups. A translation group is the file name of the PHP files in the lang
      * directory.
      * @return array
      */
     public function getTranslationGroups(): array
     {
         $groups = [];
-        $langDirPath = resource_path('lang');
+        $langDirPath = function_exists('lang_path') ? lang_path() : resource_path('lang');
         $filesAndDirs = $this->files->allFiles($langDirPath);
         foreach ($filesAndDirs as $file) {
             /* @var SplFileInfo $file */
@@ -131,7 +131,7 @@ class ChainedTranslationManager
     }
 
     public function mergeChainedTranslationsIntoDefaultTranslations(string $locale): void {
-        $defaultLangPath = App::get('path.lang');
+        $defaultLangPath = function_exists('lang_path') ? lang_path() : resource_path('lang');
         if (! $this->localeFolderExists($locale)) {
             $this->createLocaleFolder($locale);
         }
