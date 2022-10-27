@@ -79,7 +79,6 @@ You can edit the group name of all json translations with the `json_group`.
  
 ## TODO's & Ideas
 
-- support for JSON translation files
 - option to overwrite the default `lang` directory. This could be useful on local and staging environments to manage the
 developer translations. 
 
