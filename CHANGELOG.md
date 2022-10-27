@@ -2,6 +2,14 @@
 
 All notable changes to the __Laravel Chained Translator__ will be documented in this file.
 
+## Version 2.1.0
+### Fixed
+- Editing translations in nested folders
+### Added
+- Support for json translations
+- Config option 'group_keys_in_array'
+- Config option 'json_group'
+
 ## Version 2.0.0
 ### Updated
 - Added support for Laravel 9 and the moved lang dir
