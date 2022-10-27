@@ -16,14 +16,10 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
     {
         // first add the lang custom dir because other dependencies need this
         $this->app->instance('chained-translator.path.lang.custom', $this->getCustomLangPath());
+
         //create custom language directory and add .gitignore file to avoid commits of customer translations:
         if (!file_exists($this->app->get('chained-translator.path.lang.custom'))) {
-            /* @var Filesystem $fileSystem */
-            $fileSystem = $this->app->get('files');
-            $fileSystem->makeDirectory($this->app->get('chained-translator.path.lang.custom'), 0755, true);
-            if (config('laravel-chained-translator.add_gitignore_to_custom_lang_directory', true)) {
-                $fileSystem->put($this->app->get('chained-translator.path.lang.custom').'/.gitignore', "*\n!.gitignore\n");
-            }
+            $this->buildCustomLangDir();
         }
 
         // add the parent dependencies
@@ -59,5 +55,15 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
         }
 
         return $this->app->basePath($customLangDirName);
+    }
+
+    private function buildCustomLangDir()
+    {
+        /* @var Filesystem $fileSystem */
+        $fileSystem = $this->app->get('files');
+        $fileSystem->makeDirectory($this->app->get('chained-translator.path.lang.custom'), 0755, true);
+        if (config('laravel-chained-translator.add_gitignore_to_custom_lang_directory', true)) {
+            $fileSystem->put($this->app->get('chained-translator.path.lang.custom').'/.gitignore', "*\n!.gitignore\n");
+        }
     }
 }
