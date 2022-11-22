@@ -1,5 +1,8 @@
 # Laravel Chained Translator
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/statikbe/laravel-chained-translator.svg?style=flat-square)](https://packagist.org/packages/statikbe/laravel-chained-translator)
+[![Total Downloads](https://img.shields.io/packagist/dt/statikbe/laravel-chained-translator.svg?style=flat-square)](https://packagist.org/packages/statikbe/laravel-chained-translator)
+
 The chained translator can combine several translators that can override each others translations. Typically, at some 
 point during the development phase, a content manager wants to translate or finetune the translation strings added by
 developers. This often results in merge and versioning issues, when developers and content managers are working on
