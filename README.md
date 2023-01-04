@@ -2,8 +2,8 @@
 
 # Laravel Chained Translator
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/statikbe/laravel-chained-translator.svg?style=flat-square)](https://packagist.org/packages/statikbe/laravel-surveyhero)
-[![Total Downloads](https://img.shields.io/packagist/dt/statikbe/laravel-chained-translator.svg?style=flat-square)](https://packagist.org/packages/statikbe/laravel-surveyhero)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/statikbe/laravel-chained-translator.svg?style=flat-square)](https://packagist.org/packages/statikbe/laravel-chained-translator)
+[![Total Downloads](https://img.shields.io/packagist/dt/statikbe/laravel-chained-translator.svg?style=flat-square)](https://packagist.org/packages/statikbe/laravel-chained-translator)
 
 The chained translator can combine several translators that can override each others translations. Typically, at some 
 point during the development phase, a content manager wants to translate or finetune the translation strings added by
@@ -20,7 +20,9 @@ For instance, the default translations created by developers are written in the 
 key exists in the `resources/lang-custom` directory, this is preferred, otherwise we fallback to the default 
 translations. 
 
-The package works together with our [Laravel Nova Chained Translation Manager](https://github.com/statikbe/laravel-nova-chained-translation-manager) that provides a UI to let content managers edit translations.
+We offer two package that provide a UI to let content managers edit translations.
+- [Laravel Nova Chained Translation Manager](https://github.com/statikbe/laravel-nova-chained-translation-manager) for Laravel Nova
+- [Laravel Filament Chained Translation Manager](https://github.com/statikbe/laravel-filament-chained-translation-manager) for Laravel Filament
 
 ## Installation
 
@@ -48,23 +50,40 @@ This command can be useful to merge the translation work of a translator back in
 ## Configuration
 
 You can publish the configuration by running this command:
+```bash
+php artisan vendor:publish --provider="Statikbe\LaravelChainedTranslator\TranslationServiceProvider" --tag=config
 ```
-php artisan vendor:publish --provider="Statikbe\LaravelChainedTranslator\TranslationServiceProvider"
-```
 
-The following configuration fields are available:
+### The following configuration fields are available:
 
-- __Custom lang directory__:
-By default, the custom translations are saved in `resources/lang-custom`. This can be configured in 
-`laravel-chained-translator.php` configuration file with the key: `custom_lang_directory_name`
+#### 1. Custom lang directory
+By default, the custom translations are saved in `resources/lang-custom`. This can be configured using `custom_lang_directory_name`.
 
-- __Add .gitignore to custom lang directory__: 
-If the config key `add_gitignore_to_custom_lang_directory` is set to true, a .gitignore file is added to the custom 
+#### 2. .gitignore in custom lang directory
+If `add_gitignore_to_custom_lang_directory` is set to true, a .gitignore file is added to the custom 
 language directory.
+
+#### 3. Group keys in nested arrays
+If `group_keys_in_array` is set to true, dotted translation keys will be mapped into arrays.
+
+Set to __true__: saved as nested arrays, f.e.
+```php
+'key' => [
+   'detail' => 'translation',
+]
+```
+
+Set to __false__: saved as dotted keys, f.e.
+
+```php
+'key.detail' => 'translation',
+```
+
+#### 4. Custom json group name
+You can edit the group name of all json translations with the `json_group`.
  
 ## TODO's & Ideas
 
-- support for JSON translation files
 - option to overwrite the default `lang` directory. This could be useful on local and staging environments to manage the
 developer translations. 
 
