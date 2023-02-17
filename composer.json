@@ -39,9 +39,9 @@
         }
     ],
     "require": {
-        "php": "^8.0|^8.1",
+        "php": "^8.0|^8.1|^8.2",
         "brick/varexporter": "^0.3.5",
-        "laravel/framework": "^9.0"
+        "laravel/framework": "^9.0|^10.0"
     },
     "config": {
         "preferred-install": "dist",
