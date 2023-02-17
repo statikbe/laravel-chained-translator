@@ -9,7 +9,7 @@ if(!function_exists('array_undot'))
      * @param array $dotNotationArray
      * @return array
      */
-    function array_undot(array $dotNotationArray)
+    function array_undot(array $dotNotationArray): array
     {
         $array = [];
         foreach ($dotNotationArray as $key => $value) {

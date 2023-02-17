@@ -129,9 +129,9 @@ class ChainedTranslationManager
 
         if ($group === $this->getJsonGroupName()) {
             return $this->compressHierarchicalTranslationsToDotNotation($this->translationLoader->load($locale, '*', '*'));
-        } else {
-            return $this->compressHierarchicalTranslationsToDotNotation($this->translationLoader->load($locale, $group, $namespace ?? null));
         }
+
+        return $this->compressHierarchicalTranslationsToDotNotation($this->translationLoader->load($locale, $group, $namespace ?? null));
     }
 
     public function mergeChainedTranslationsIntoDefaultTranslations(string $locale): void {

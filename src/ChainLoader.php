@@ -14,7 +14,7 @@ class ChainLoader implements Loader
      *
      * @var array
      */
-    private $loaders = [];
+    private array $loaders = [];
 
     /**
      * Add a translation loader to the chain
