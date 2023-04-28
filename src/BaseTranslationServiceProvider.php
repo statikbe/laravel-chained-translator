@@ -55,7 +55,7 @@
             });
 
             $this->app->singleton('translation.loader.custom', function ($app) {
-                return new CustomLangLoader($app['files'], $app['chained-translator.path.lang.custom']);
+                return new NonPackageFileLoader($app['files'], $app['chained-translator.path.lang.custom']);
             });
 
             //override the Laravel translation loader singleton:
