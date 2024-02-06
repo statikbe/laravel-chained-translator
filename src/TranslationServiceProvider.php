@@ -3,7 +3,6 @@
 namespace Statikbe\LaravelChainedTranslator;
 
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Str;
 
 class TranslationServiceProvider extends BaseTranslationServiceProvider
 {
@@ -12,7 +11,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         // first add the lang custom dir because other dependencies need this
         $this->app->instance('chained-translator.path.lang.custom', $this->getCustomLangPath());
@@ -36,7 +35,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
      *
      * @return array
      */
-    public function provides()
+    public function provides(): array
     {
         return array_merge(parent::provides(), [
             'chained-translator.path.lang.custom',
@@ -44,7 +43,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
         ]);
     }
 
-    private function getCustomLangPath()
+    private function getCustomLangPath(): string
     {
         $customLangDirName = config('laravel-chained-translator.custom_lang_directory_name', 'lang-custom');
 
@@ -57,7 +56,7 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
         return $this->app->basePath($customLangDirName);
     }
 
-    private function buildCustomLangDir()
+    private function buildCustomLangDir(): void
     {
         /* @var Filesystem $fileSystem */
         $fileSystem = $this->app->get('files');

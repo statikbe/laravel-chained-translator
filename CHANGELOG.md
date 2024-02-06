@@ -2,6 +2,10 @@
 
 All notable changes to the __Laravel Chained Translator__ will be documented in this file.
 
+## Version 2.2.0
+### Added
+- Added support for Laravel 10
+- Added return types
 ## Version 2.1.0
 ### Fixed
 - Editing translations in nested folders

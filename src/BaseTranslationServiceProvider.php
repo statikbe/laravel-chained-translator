@@ -13,7 +13,7 @@
          *
          * @return void
          */
-        public function boot()
+        public function boot(): void
         {
             //publish config:
             $this->publishes([
@@ -33,7 +33,8 @@
          *
          * @return void
          */
-        public function register() {
+        public function register(): void
+        {
             //merge config:
             $this->mergeConfigFrom(
                 __DIR__.'/../config/laravel-chained-translator.php', 'laravel-chained-translator'
@@ -47,14 +48,14 @@
          *
          * @return void
          */
-        protected function registerLoader()
+        protected function registerLoader(): void
         {
             $this->app->singleton('translation.loader.default', function ($app) {
                 return new FileLoader($app['files'], $app['path.lang']);
             });
 
             $this->app->singleton('translation.loader.custom', function ($app) {
-                return new FileLoader($app['files'], $app['chained-translator.path.lang.custom']);
+                return new NonPackageFileLoader($app['files'], $app['chained-translator.path.lang.custom']);
             });
 
             //override the Laravel translation loader singleton:
@@ -75,7 +76,7 @@
          *
          * @return array
          */
-        public function provides()
+        public function provides(): array
         {
             return array_merge(parent::provides(), [
                 'translation.loader.custom',

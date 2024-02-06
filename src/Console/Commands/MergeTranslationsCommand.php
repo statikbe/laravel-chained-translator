@@ -22,22 +22,12 @@
         protected $description = 'Merges the custom translations back into the translation files of the default Laravel lang directory.';
 
         /**
-         * Create a new command instance.
-         *
-         * @return void
-         */
-        public function __construct()
-        {
-            parent::__construct();
-        }
-
-        /**
          * Execute the console command.
          *
          * @param ChainedTranslationManager $chainedTranslationManager
          * @return mixed
          */
-        public function handle(ChainedTranslationManager $chainedTranslationManager)
+        public function handle(ChainedTranslationManager $chainedTranslationManager): mixed
         {
             $locale = $this->argument('locale');
 
