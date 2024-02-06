@@ -2,42 +2,31 @@
 
 namespace Statikbe\LaravelChainedTranslator;
 
+use Brick\VarExporter\ExportException;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\App;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
+use Statikbe\LaravelChainedTranslator\Exceptions\SaveTranslationFileException;
 use Symfony\Component\Finder\SplFileInfo;
 use Brick\VarExporter\VarExporter;
 
 
 class ChainedTranslationManager
 {
-    /**
-     * The filesystem instance.
-     *
-     * @var \Illuminate\Filesystem\Filesystem
-     */
-    protected $files;
+    protected Filesystem $files;
 
     /**
      * The default path for the loader.
-     *
-     * @var string
      */
-    protected $path;
-
-    /**
-     * @var ChainLoader $translationLoader
-     */
-    private $translationLoader;
+    protected string $path;
+    private ChainLoader $translationLoader;
 
     /**
      * Create a new file loader instance.
      *
-     * @param \Illuminate\Filesystem\Filesystem $files
+     * @param Filesystem $files
      * @param ChainLoader $translationLoader
      * @param string $path
      */
@@ -56,6 +45,7 @@ class ChainedTranslationManager
      * @param string $key
      * @param string $translation
      * @return void
+     * @throws SaveTranslationFileException
      */
     public function save(string $locale, string $group, string $key, string $translation): void
     {
@@ -134,6 +124,9 @@ class ChainedTranslationManager
         }
     }
 
+    /**
+     * @throws SaveTranslationFileException
+     */
     public function mergeChainedTranslationsIntoDefaultTranslations(string $locale): void {
         $defaultLangPath = function_exists('lang_path') ? lang_path() : resource_path('lang');
         if (! $this->localeFolderExists($locale)) {
@@ -195,6 +188,9 @@ class ChainedTranslationManager
         return collect([]);
     }
 
+    /**
+     * @throws SaveTranslationFileException
+     */
     private function saveGroupTranslations(string $locale, string $group, Collection $translations, string $languagePath=null): void
     {
         $groupPath = $this->getGroupPath($locale, $group, $languagePath);
@@ -211,10 +207,19 @@ class ChainedTranslationManager
             }
             ksort($translations);
 
-            $contents = "<?php\n\nreturn " . VarExporter::export($translations) . ';' . \PHP_EOL;
+            try {
+                $contents = "<?php\n\nreturn " . VarExporter::export($translations) . ';' . \PHP_EOL;
+            }
+            catch(ExportException $ex){
+                throw new SaveTranslationFileException('The translations could not be transformed to the .php translation file.', 0, $ex);
+            }
         }
 
-        $this->files->put($groupPath, $contents);
+        $success = $this->files->put($groupPath, $contents);
+
+        if(!$success){
+            throw new SaveTranslationFileException("The translation file $groupPath could not be saved.");
+        }
 
         // clear the opcache of the group file, because otherwise in the next request, an old cached file can be read in
         // and the saved translation can be overwritten...
@@ -285,6 +290,9 @@ class ChainedTranslationManager
         return $subFolders;
     }
 
+    /**
+     * @throws SaveTranslationFileException
+     */
     private function saveJson(string $locale, string $key, string $translation): void
     {
         $jsonGroup = $this->getJsonGroupName();

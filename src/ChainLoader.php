@@ -11,10 +11,8 @@ class ChainLoader implements Loader
 {
     /**
      * Loader instances of the chain
-     *
-     * @var array
      */
-    private $loaders = [];
+    private array $loaders = [];
 
     /**
      * Add a translation loader to the chain
