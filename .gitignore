@@ -6,4 +6,5 @@
 npm-debug.log
 yarn-error.log
 .phpunit.result.cache
-composr.lock
+.phpunit.cache/
+composor.lock
