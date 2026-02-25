@@ -21,6 +21,11 @@
             "src/Helpers/helpers.php"
         ]
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Statikbe\\LaravelChainedTranslator\\Tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "Kobe Christiaensen",
@@ -45,7 +50,10 @@
     },
     "config": {
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     },
     "extra": {
         "laravel": {
@@ -55,5 +63,10 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "pestphp/pest": "^3.0|^4.4",
+        "pestphp/pest-plugin-laravel": "^3.0|^4.1"
+    }
 }
