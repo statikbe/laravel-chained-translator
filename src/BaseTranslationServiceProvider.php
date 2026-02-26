@@ -65,7 +65,8 @@ class BaseTranslationServiceProvider extends LaravelTranslationServiceProvider
             assert($app instanceof Application, 'App must be an instance of Application.');
             $files = $app->make(Filesystem::class);
             // Use the container binding for custom path resolution
-            $customPath = $app->get('chained-translator.path.lang.custom');
+            // @mago-expect analysis:invalid-type-cast
+            $customPath = (string) $app->get('chained-translator.path.lang.custom');
 
             return new NonPackageFileLoader($files, $customPath);
         });

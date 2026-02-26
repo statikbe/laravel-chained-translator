@@ -14,6 +14,7 @@ if (!function_exists('array_undot')) {
     function array_undot(array $dotNotationArray): array
     {
         $array = [];
+        /** @var mixed $value */
         foreach ($dotNotationArray as $key => $value) {
             // if there is a space after the dot, this could legitimately be
             // a single key and not nested.
@@ -29,4 +30,3 @@ if (!function_exists('array_undot')) {
         return $array;
     }
 }
-
