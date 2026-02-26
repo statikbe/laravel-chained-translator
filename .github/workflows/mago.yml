@@ -1,17 +1,17 @@
-name: larastan
+name: mago
 
 on:
   push:
     paths:
       - "**.php"
-      - ".github/workflows/larastan.yml"
-      - "phpstan.neon.dist"
+      - ".github/workflows/mago.yml"
+      - "mago.toml"
       - "composer.json"
   pull_request:
     paths:
       - "**.php"
-      - ".github/workflows/larastan.yml"
-      - "phpstan.neon.dist"
+      - ".github/workflows/mago.yml"
+      - "mago.toml"
       - "composer.json"
 
 concurrency:
@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  phpstan:
+  mago:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     strategy:
@@ -27,7 +27,7 @@ jobs:
       matrix:
         php: [8.2, 8.4]
 
-    name: PHPStan - PHP ${{ matrix.php }}
+    name: Mago - PHP ${{ matrix.php }}
 
     steps:
       - name: Checkout code
@@ -43,5 +43,14 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction
 
-      - name: Run PHPStan
-        run: vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit=1G
+      - name: Setup Mago
+        uses: nhedger/setup-mago@v1
+
+      - name: Run Mago Format Check
+        run: mago format --dry-run
+
+      - name: Run Mago Lint
+        run: mago lint --reporting-format=github
+
+      - name: Run Mago Analyze
+        run: mago analyze --reporting-format=github

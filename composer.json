@@ -65,7 +65,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require-dev": {
-        "larastan/larastan": "^3.0",
+        "carthage-software/mago": "^1.13",
         "orchestra/testbench": "^9.0|^10.0",
         "pestphp/pest": "^3.0|^4.4",
         "pestphp/pest-plugin-laravel": "^3.0|^4.1"
