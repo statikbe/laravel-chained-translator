@@ -37,14 +37,16 @@ class ChainedTranslationManager
         Filesystem $files,
         private readonly ChainLoader $translationLoader,
         string $path,
+        ?ChainedTranslatorConfig $config = null,
     ) {
         // Keep references for backward compatibility with subclasses
         $this->files = $files;
         $this->path = $path;
 
-        $this->nameParser = new TranslationGroupNameParser();
+        $config ??= new ChainedTranslatorConfig();
+        $this->nameParser = new TranslationGroupNameParser($config);
         $this->groupFinder = new TranslationGroupFinder($files, $this->nameParser);
-        $this->fileWriter = new TranslationFileWriter($files, $this->nameParser, $path);
+        $this->fileWriter = new TranslationFileWriter($files, $this->nameParser, $config, $path);
     }
 
     /**

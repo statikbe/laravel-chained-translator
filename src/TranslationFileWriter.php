@@ -18,6 +18,7 @@ class TranslationFileWriter
     public function __construct(
         private readonly Filesystem $files,
         private readonly TranslationGroupNameParser $nameParser,
+        private readonly ChainedTranslatorConfig $config,
         private readonly string $basePath,
     ) {}
 
@@ -132,7 +133,7 @@ class TranslationFileWriter
      */
     private function encodePhpTranslations(array $translations): string
     {
-        if (config('laravel-chained-translator.group_keys_in_array', true)) {
+        if ($this->config->shouldGroupKeysInArray()) {
             $translations = array_undot($translations);
         }
 

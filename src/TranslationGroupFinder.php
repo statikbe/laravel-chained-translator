@@ -51,35 +51,34 @@ class TranslationGroupFinder
             return null;
         }
 
-        $extension = strtolower($file->getExtension());
         $relativePath = $file->getRelativePath();
         $vendorPath = strstr($relativePath, 'vendor');
 
         if ($vendorPath !== false) {
-            return $this->resolveVendorGroup($file, $extension, $vendorPath);
+            return $this->resolveVendorGroup($file, $vendorPath);
         }
 
-        return $this->resolveRegularGroup($file, $extension, $relativePath);
+        return $this->resolveRegularGroup($file, $relativePath);
     }
 
-    private function resolveVendorGroup(SplFileInfo $file, string $extension, string $vendorPath): ?string
+    private function resolveVendorGroup(SplFileInfo $file, string $vendorPath): ?string
     {
         $vendorPath = Str::replaceFirst('vendor' . DIRECTORY_SEPARATOR, '', $vendorPath);
         $subFolders = null;
         $namespace = null;
 
-        if ($extension === 'php') {
+        if (is_php_file($file->getRelativePathname())) {
             $options = explode(DIRECTORY_SEPARATOR, $vendorPath);
             $namespace = $options[0];
             unset($options[0], $options[1]);
             $subFolders = implode(DIRECTORY_SEPARATOR, array_filter($options));
         }
 
-        if ($extension === 'json') {
+        if (is_json_file($file->getRelativePathname())) {
             return $this->nameParser->getJsonGroupName();
         }
 
-        if ($extension !== 'php') {
+        if (!is_php_file($file->getRelativePathname())) {
             return null;
         }
 
@@ -89,13 +88,13 @@ class TranslationGroupFinder
         . implode(DIRECTORY_SEPARATOR, array_filter([$subFolders, $file->getFilenameWithoutExtension()]));
     }
 
-    private function resolveRegularGroup(SplFileInfo $file, string $extension, string $relativePath): ?string
+    private function resolveRegularGroup(SplFileInfo $file, string $relativePath): ?string
     {
-        if ($extension === 'json') {
+        if (is_json_file($file->getRelativePathname())) {
             return $this->nameParser->getJsonGroupName();
         }
 
-        if ($extension !== 'php') {
+        if (!is_php_file($file->getRelativePathname())) {
             return null;
         }
 

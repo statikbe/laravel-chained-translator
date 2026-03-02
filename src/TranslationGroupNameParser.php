@@ -11,9 +11,13 @@ use Illuminate\Support\Str;
  */
 class TranslationGroupNameParser
 {
+    public function __construct(
+        private readonly ChainedTranslatorConfig $config,
+    ) {}
+
     public function getJsonGroupName(): string
     {
-        return (string) config('laravel-chained-translator.json_group', 'single');
+        return $this->config->getJsonGroupName();
     }
 
     public function isJsonGroup(string $group): bool
