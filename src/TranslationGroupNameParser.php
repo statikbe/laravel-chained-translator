@@ -13,9 +13,8 @@ class TranslationGroupNameParser
 {
     private readonly ChainedTranslatorConfig $config;
 
-    public function __construct(
-        ?ChainedTranslatorConfig $config = null,
-    ) {
+    public function __construct(?ChainedTranslatorConfig $config = null)
+    {
         $this->config = $config ?? new ChainedTranslatorConfig();
     }
 
