@@ -15,12 +15,16 @@ use Statikbe\LaravelChainedTranslator\Exceptions\SaveTranslationFileException;
  */
 class TranslationFileWriter
 {
+    private readonly ChainedTranslatorConfig $config;
+
     public function __construct(
         private readonly Filesystem $files,
         private readonly TranslationGroupNameParser $nameParser,
-        private readonly ChainedTranslatorConfig $config,
         private readonly string $basePath,
-    ) {}
+        ?ChainedTranslatorConfig $config = null,
+    ) {
+        $this->config = $config ?? new ChainedTranslatorConfig();
+    }
 
     /**
      * @return Collection<string, mixed>

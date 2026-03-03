@@ -46,7 +46,7 @@ class ChainedTranslationManager
         $config ??= new ChainedTranslatorConfig();
         $this->nameParser = new TranslationGroupNameParser($config);
         $this->groupFinder = new TranslationGroupFinder($files, $this->nameParser);
-        $this->fileWriter = new TranslationFileWriter($files, $this->nameParser, $config, $path);
+        $this->fileWriter = new TranslationFileWriter($files, $this->nameParser, $path, $config);
     }
 
     /**

@@ -11,9 +11,13 @@ use Illuminate\Support\Str;
  */
 class TranslationGroupNameParser
 {
+    private readonly ChainedTranslatorConfig $config;
+
     public function __construct(
-        private readonly ChainedTranslatorConfig $config,
-    ) {}
+        ?ChainedTranslatorConfig $config = null,
+    ) {
+        $this->config = $config ?? new ChainedTranslatorConfig();
+    }
 
     public function getJsonGroupName(): string
     {
