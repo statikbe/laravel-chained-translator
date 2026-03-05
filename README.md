@@ -81,11 +81,6 @@ Set to __false__: saved as dotted keys, f.e.
 
 #### 4. Custom json group name
 You can edit the group name of all json translations with the `json_group`.
- 
-## TODO's & Ideas
-
-- option to overwrite the default `lang` directory. This could be useful on local and staging environments to manage the
-developer translations. 
 
 ## Credits
 
