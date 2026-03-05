@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Statikbe\LaravelChainedTranslator;
 
 use Illuminate\Filesystem\Filesystem;
@@ -13,11 +15,13 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(ChainedTranslatorConfig::class);
+
         // first add the lang custom dir because other dependencies need this
         $this->app->instance('chained-translator.path.lang.custom', $this->getCustomLangPath());
 
-        //create custom language directory and add .gitignore file to avoid commits of customer translations:
-        if (!file_exists($this->app->get('chained-translator.path.lang.custom'))) {
+        // create custom language directory and add .gitignore file to avoid commits of customer translations:
+        if (!file_exists($this->getCustomLangPath())) {
             $this->buildCustomLangDir();
         }
 
@@ -26,7 +30,16 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
 
         // add the chained translation manager who needs parent dependencies
         $this->app->singleton(ChainedTranslationManager::class, function ($app) {
-            return new ChainedTranslationManager($app['files'], $app['translation.loader'], $app['chained-translator.path.lang.custom']);
+            assert(
+                $app instanceof \Illuminate\Contracts\Foundation\Application,
+                'App must be an instance of \Illuminate\Contracts\Foundation\Application.',
+            );
+            $files = $app->make(Filesystem::class);
+            $loader = $app->make(ChainLoader::class);
+            $config = $app->make(ChainedTranslatorConfig::class);
+            $path = $this->getCustomLangPath();
+
+            return new ChainedTranslationManager($files, $loader, $path, $config);
         });
     }
 
@@ -40,15 +53,20 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
         return array_merge(parent::provides(), [
             'chained-translator.path.lang.custom',
             ChainedTranslationManager::class,
+            ChainedTranslatorConfig::class,
         ]);
     }
 
     private function getCustomLangPath(): string
     {
-        $customLangDirName = config('laravel-chained-translator.custom_lang_directory_name', 'lang-custom');
+        $config = $this->app->make(ChainedTranslatorConfig::class);
+        $customLangDirName = $config->getCustomLangDirectoryName();
 
         if (!file_exists($this->app->basePath($customLangDirName))) {
-            if (file_exists($this->app->resourcePath($customLangDirName)) || file_exists($this->app->resourcePath('lang'))) {
+            if (
+                file_exists($this->app->resourcePath($customLangDirName))
+                || file_exists($this->app->resourcePath('lang'))
+            ) {
                 return $this->app->resourcePath($customLangDirName);
             }
         }
@@ -58,11 +76,12 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
 
     private function buildCustomLangDir(): void
     {
-        /* @var Filesystem $fileSystem */
-        $fileSystem = $this->app->get('files');
-        $fileSystem->makeDirectory($this->app->get('chained-translator.path.lang.custom'), 0755, true);
-        if (config('laravel-chained-translator.add_gitignore_to_custom_lang_directory', true)) {
-            $fileSystem->put($this->app->get('chained-translator.path.lang.custom').'/.gitignore', "*\n!.gitignore\n");
+        $config = $this->app->make(ChainedTranslatorConfig::class);
+        $fileSystem = $this->app->make(Filesystem::class);
+        $customLangPath = $this->getCustomLangPath();
+        $fileSystem->makeDirectory($customLangPath, 0o755, true);
+        if ($config->shouldAddGitignoreToCustomLangDirectory()) {
+            $fileSystem->put($customLangPath . '/.gitignore', "*\n!.gitignore\n");
         }
     }
 }
