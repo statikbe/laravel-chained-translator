@@ -77,14 +77,12 @@ class ChainLoader implements Loader
     public function load($locale, $group, $namespace = null): array
     {
         /** @var array<string, mixed> $messages */
-        $messages = collect($this->loaders)
-            ->reduce(
-                static function (array $carry, Loader $loader) use ($locale, $group, $namespace): array {
-                    /** @var array<string, mixed> */
-                    return array_replace_recursive($loader->load($locale, $group, $namespace), $carry);
-                },
-                [],
-            );
+        $messages = [];
+
+        foreach ($this->loaders as $loader) {
+            /** @var array<string, mixed> $messages */
+            $messages = array_replace_recursive($loader->load($locale, $group, $namespace), $messages);
+        }
 
         return $messages;
     }
@@ -124,14 +122,12 @@ class ChainLoader implements Loader
     public function namespaces(): array
     {
         /** @var array<string, mixed> $namespaces */
-        $namespaces = collect($this->loaders)
-            ->reduce(
-                static function (array $carry, Loader $loader): array {
-                    /** @var array<string, mixed> */
-                    return $carry + $loader->namespaces();
-                },
-                [],
-            );
+        $namespaces = [];
+
+        foreach ($this->loaders as $loader) {
+            /** @var array<string, mixed> $namespaces */
+            $namespaces += $loader->namespaces();
+        }
 
         return $namespaces;
     }

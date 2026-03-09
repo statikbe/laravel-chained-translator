@@ -58,16 +58,14 @@ class BaseTranslationServiceProvider extends LaravelTranslationServiceProvider
      */
     protected function registerLoader(): void
     {
-        $this->app->singleton('translation.loader.default', static function ($app) {
-            assert($app instanceof Application, 'App must be an instance of Application.');
+        $this->app->singleton('translation.loader.default', static function (Application $app) {
             $files = $app->make(Filesystem::class);
             $langPath = $app->langPath();
 
             return new FileLoader($files, $langPath);
         });
 
-        $this->app->singleton('translation.loader.custom', static function ($app) {
-            assert($app instanceof Application, 'App must be an instance of Application.');
+        $this->app->singleton('translation.loader.custom', static function (Application $app) {
             $files = $app->make(Filesystem::class);
             // Use the container binding for custom path resolution
             // @mago-expect analysis:invalid-type-cast
@@ -77,8 +75,7 @@ class BaseTranslationServiceProvider extends LaravelTranslationServiceProvider
         });
 
         //override the Laravel translation loader singleton:
-        $this->app->singleton('translation.loader', static function ($app) {
-            assert($app instanceof Application, 'App must be an instance of Application.');
+        $this->app->singleton('translation.loader', static function (Application $app) {
             $loader = new ChainLoader();
             $customLoader = $app->make('translation.loader.custom');
             assert($customLoader instanceof TranslationLoader, 'Custom loader must implement TranslationLoader.');
