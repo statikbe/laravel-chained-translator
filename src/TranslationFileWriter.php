@@ -71,7 +71,7 @@ class TranslationFileWriter
 
         $success = $this->files->put($groupPath, $contents);
 
-        if (!$success) {
+        if ($success === false) {
             throw new SaveTranslationFileException("The translation file {$groupPath} could not be saved.");
         }
 
@@ -156,6 +156,7 @@ class TranslationFileWriter
 
     /**
      * @param array<string, mixed> $translations
+     * @throws SaveTranslationFileException
      */
     private function encodeJsonTranslations(array $translations): string
     {
@@ -163,6 +164,12 @@ class TranslationFileWriter
 
         $encoded = json_encode($translations, JSON_PRETTY_PRINT);
 
-        return $encoded !== false ? $encoded : '';
+        if ($encoded === false) {
+            throw new SaveTranslationFileException(
+                'The translations could not be encoded to JSON: ' . json_last_error_msg(),
+            );
+        }
+
+        return $encoded;
     }
 }
