@@ -6,6 +6,11 @@ on:
       - "**.php"
       - ".github/workflows/run-tests.yml"
       - "composer.json"
+  pull_request:
+    paths:
+      - "**.php"
+      - ".github/workflows/run-tests.yml"
+      - "composer.json"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
