@@ -54,15 +54,15 @@ describe('TranslationGroupFinder', function (): void {
         $allFiles = $files->allFiles($enDir);
         $phpFiles = array_filter(
             $allFiles,
-            static fn ($file) => strtolower(pathinfo($file->getRelativePathname(), PATHINFO_EXTENSION)) === 'php',
+            static fn($file) => strtolower(pathinfo($file->getRelativePathname(), PATHINFO_EXTENSION)) === 'php',
         );
         $jsonFiles = array_filter(
             $allFiles,
-            static fn ($file) => strtolower(pathinfo($file->getRelativePathname(), PATHINFO_EXTENSION)) === 'json',
+            static fn($file) => strtolower(pathinfo($file->getRelativePathname(), PATHINFO_EXTENSION)) === 'json',
         );
         $otherFiles = array_filter(
             $allFiles,
-            static fn ($file) => !in_array(
+            static fn($file) => !in_array(
                 strtolower(pathinfo($file->getRelativePathname(), PATHINFO_EXTENSION)),
                 ['php', 'json'],
                 true,
