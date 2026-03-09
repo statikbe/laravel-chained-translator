@@ -73,6 +73,18 @@ function createTestDirectory(string $path): void
 }
 
 /**
+ * Create a unique temporary directory under sys_get_temp_dir() with an optional prefix.
+ * The directory is created immediately and its path is returned.
+ */
+function createUniqueTempDirectory(string $prefix = 'test-'): string
+{
+    $path = sys_get_temp_dir() . '/' . $prefix . uniqid();
+    createTestDirectory($path);
+
+    return $path;
+}
+
+/**
  * Clean up test directory
  */
 function cleanupTestDirectory(string $path): void

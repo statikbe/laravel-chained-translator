@@ -10,10 +10,7 @@ use Statikbe\LaravelChainedTranslator\TranslationGroupNameParser;
 
 describe('TranslationFileWriter', function (): void {
     beforeEach(function (): void {
-        /** @var string $testPath */
-        $testPath = sys_get_temp_dir() . '/test-translations-' . uniqid();
-        createTestDirectory($testPath);
-        $this->testPath = $testPath;
+        $this->testPath = createUniqueTempDirectory('test-translations-');
     });
 
     afterEach(function (): void {

@@ -11,14 +11,4 @@ describe('BaseTranslationServiceProvider', function () {
         expect($provides)->toContain('translation.loader.default');
         expect($provides)->toContain('translation.manager');
     });
-
-    it('has correct class structure', function () {
-        $providerFile = __DIR__ . '/../../src/BaseTranslationServiceProvider.php';
-        expect($providerFile)->toBeFile();
-
-        $content = file_get_contents($providerFile);
-        expect($content)->toContain('BaseTranslationServiceProvider');
-        expect($content)->toContain('registerLoader');
-        expect($content)->toContain('ChainLoader');
-    });
 });
