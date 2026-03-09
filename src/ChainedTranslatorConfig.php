@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Statikbe\LaravelChainedTranslator;
 
+use Illuminate\Support\Facades\Config;
+
 class ChainedTranslatorConfig
 {
-    const PACKAGE = 'laravel-chained-translator';
-
     /**
      * The directory name of the translations that will override the default translations.
      */
     public function getCustomLangDirectoryName(): string
     {
-        return (string) config(self::PACKAGE . '.custom_lang_directory_name', 'lang-custom');
+        return Config::string(BaseTranslationServiceProvider::NAME . '.custom_lang_directory_name', 'lang-custom');
     }
 
     /**
@@ -21,7 +21,7 @@ class ChainedTranslatorConfig
      */
     public function shouldAddGitignoreToCustomLangDirectory(): bool
     {
-        return config(self::PACKAGE . '.add_gitignore_to_custom_lang_directory', true) === true;
+        return Config::boolean(BaseTranslationServiceProvider::NAME . '.add_gitignore_to_custom_lang_directory', true);
     }
 
     /**
@@ -29,7 +29,7 @@ class ChainedTranslatorConfig
      */
     public function shouldGroupKeysInArray(): bool
     {
-        return config(self::PACKAGE . '.group_keys_in_array', true) !== false;
+        return Config::boolean(BaseTranslationServiceProvider::NAME . '.group_keys_in_array', true);
     }
 
     /**
@@ -37,6 +37,6 @@ class ChainedTranslatorConfig
      */
     public function getJsonGroupName(): string
     {
-        return (string) config(self::PACKAGE . '.json_group', 'single');
+        return Config::string(BaseTranslationServiceProvider::NAME . '.json_group', 'single');
     }
 }

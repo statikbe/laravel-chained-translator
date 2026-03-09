@@ -67,18 +67,18 @@ class TranslationGroupFinder
         $subFolders = null;
         $namespace = null;
 
-        if (is_php_file($file->getRelativePathname())) {
+        if (self::isPhpFile($file->getRelativePathname())) {
             $options = explode(DIRECTORY_SEPARATOR, $vendorPath);
             $namespace = $options[0];
             unset($options[0], $options[1]);
             $subFolders = implode(DIRECTORY_SEPARATOR, array_filter($options));
         }
 
-        if (is_json_file($file->getRelativePathname())) {
+        if (self::isJsonFile($file->getRelativePathname())) {
             return $this->nameParser->getJsonGroupName();
         }
 
-        if (!is_php_file($file->getRelativePathname())) {
+        if (!self::isPhpFile($file->getRelativePathname())) {
             return null;
         }
 
@@ -90,11 +90,11 @@ class TranslationGroupFinder
 
     private function resolveRegularGroup(SplFileInfo $file, string $relativePath): ?string
     {
-        if (is_json_file($file->getRelativePathname())) {
+        if (self::isJsonFile($file->getRelativePathname())) {
             return $this->nameParser->getJsonGroupName();
         }
 
-        if (!is_php_file($file->getRelativePathname())) {
+        if (!self::isPhpFile($file->getRelativePathname())) {
             return null;
         }
 
@@ -103,5 +103,21 @@ class TranslationGroupFinder
         $subFolders = implode(DIRECTORY_SEPARATOR, array_filter($options));
 
         return implode(DIRECTORY_SEPARATOR, array_filter([$subFolders, $file->getFilenameWithoutExtension()]));
+    }
+
+    /**
+     * Check if a file has a PHP extension.
+     */
+    private static function isPhpFile(string $filename): bool
+    {
+        return strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'php';
+    }
+
+    /**
+     * Check if a file has a JSON extension.
+     */
+    private static function isJsonFile(string $filename): bool
+    {
+        return strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'json';
     }
 }

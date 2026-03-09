@@ -77,13 +77,14 @@ class ChainLoader implements Loader
     public function load($locale, $group, $namespace = null): array
     {
         /** @var array<string, mixed> $messages */
-        $messages = [];
-
-        foreach ($this->loaders as $loader) {
-            /** @var array<string, mixed> $merged */
-            $merged = array_replace_recursive($loader->load($locale, $group, $namespace), $messages);
-            $messages = $merged;
-        }
+        $messages = collect($this->loaders)
+            ->reduce(
+                static function (array $carry, Loader $loader) use ($locale, $group, $namespace): array {
+                    /** @var array<string, mixed> */
+                    return array_replace_recursive($loader->load($locale, $group, $namespace), $carry);
+                },
+                [],
+            );
 
         return $messages;
     }
@@ -97,9 +98,9 @@ class ChainLoader implements Loader
      */
     public function addNamespace($namespace, $hint): void
     {
-        foreach ($this->loaders as $loader) {
+        collect($this->loaders)->each(static function (Loader $loader) use ($namespace, $hint): void {
             $loader->addNamespace($namespace, $hint);
-        }
+        });
     }
 
     /**
@@ -110,9 +111,9 @@ class ChainLoader implements Loader
      */
     public function addJsonPath($path): void
     {
-        foreach ($this->loaders as $loader) {
+        collect($this->loaders)->each(static function (Loader $loader) use ($path): void {
             $loader->addJsonPath($path);
-        }
+        });
     }
 
     /**
@@ -123,13 +124,14 @@ class ChainLoader implements Loader
     public function namespaces(): array
     {
         /** @var array<string, mixed> $namespaces */
-        $namespaces = [];
-
-        foreach ($this->loaders as $loader) {
-            /** @var array<string, mixed> $loaderNamespaces */
-            $loaderNamespaces = $loader->namespaces();
-            $namespaces += $loaderNamespaces;
-        }
+        $namespaces = collect($this->loaders)
+            ->reduce(
+                static function (array $carry, Loader $loader): array {
+                    /** @var array<string, mixed> */
+                    return $carry + $loader->namespaces();
+                },
+                [],
+            );
 
         return $namespaces;
     }

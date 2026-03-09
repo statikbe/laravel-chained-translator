@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Statikbe\LaravelChainedTranslator;
 
 use Illuminate\Filesystem\Filesystem;
+use Statikbe\LaravelChainedTranslator\Facades\ChainedTranslator;
 
 class TranslationServiceProvider extends BaseTranslationServiceProvider
 {
@@ -41,6 +42,9 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
 
             return new ChainedTranslationManager($files, $loader, $path, $config);
         });
+
+        // register the facade alias
+        $this->app->alias(ChainedTranslationManager::class, ChainedTranslator::class);
     }
 
     /**

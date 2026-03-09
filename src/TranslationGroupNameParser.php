@@ -29,32 +29,34 @@ class TranslationGroupNameParser
     }
 
     /**
-     * Pulls the namespace prefix (e.g. "vendor::") from a group string, mutating it in place.
+     * Extracts the namespace prefix (e.g. "vendor::") from a group string.
+     *
+     * Returns a tuple of [namespace|null, remaining group string].
+     *
+     * @return array{0: string|null, 1: string}
      */
-    public function pullNamespace(string &$group): ?string
+    public function extractNamespace(string $group): array
     {
         if (!Str::contains($group, '::')) {
-            return null;
+            return [null, $group];
         }
 
-        $namespace = Str::before($group, '::');
-        $group = Str::after($group, '::');
-
-        return $namespace;
+        return [Str::before($group, '::'), Str::after($group, '::')];
     }
 
     /**
-     * Pulls the subfolders prefix from a group string, mutating it in place.
+     * Extracts the subfolders prefix from a group string.
+     *
+     * Returns a tuple of [subfolders|null, remaining group string].
+     *
+     * @return array{0: string|null, 1: string}
      */
-    public function pullSubfolders(string &$group): ?string
+    public function extractSubfolders(string $group): array
     {
         if (!Str::contains($group, DIRECTORY_SEPARATOR)) {
-            return null;
+            return [null, $group];
         }
 
-        $subFolders = Str::beforeLast($group, DIRECTORY_SEPARATOR);
-        $group = Str::afterLast($group, DIRECTORY_SEPARATOR);
-
-        return $subFolders;
+        return [Str::beforeLast($group, DIRECTORY_SEPARATOR), Str::afterLast($group, DIRECTORY_SEPARATOR)];
     }
 }

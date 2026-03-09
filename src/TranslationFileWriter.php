@@ -82,6 +82,11 @@ class TranslationFileWriter
         }
     }
 
+    public function getConfig(): ChainedTranslatorConfig
+    {
+        return $this->config;
+    }
+
     public function localeFolderExists(string $locale): bool
     {
         return $this->files->exists($this->basePath . DIRECTORY_SEPARATOR . $locale);
@@ -98,30 +103,30 @@ class TranslationFileWriter
             return ($languagePath ?? $this->basePath) . DIRECTORY_SEPARATOR . $locale . '.json';
         }
 
-        $basePath = $this->getGroupBasePath($locale, $group, $languagePath);
+        [$basePath, $groupName] = $this->getGroupBasePath($locale, $group, $languagePath);
 
-        $this->nameParser->pullNamespace($group);
-        $this->nameParser->pullSubfolders($group);
-
-        return $basePath . DIRECTORY_SEPARATOR . $group . '.php';
+        return $basePath . DIRECTORY_SEPARATOR . $groupName . '.php';
     }
 
-    private function getGroupBasePath(string $locale, string $group, ?string $languagePath = null): string
+    /**
+     * @return array{0: string, 1: string} [basePath, groupName]
+     */
+    private function getGroupBasePath(string $locale, string $group, ?string $languagePath = null): array
     {
         $languagePath ??= $this->basePath;
 
-        $namespace = $this->nameParser->pullNamespace($group);
+        [$namespace, $group] = $this->nameParser->extractNamespace($group);
         if ($namespace !== null) {
             $namespace = 'vendor' . DIRECTORY_SEPARATOR . $namespace;
         }
 
-        $subFolders = $this->nameParser->pullSubfolders($group);
+        [$subFolders, $group] = $this->nameParser->extractSubfolders($group);
 
         $groupBasePath = implode(DIRECTORY_SEPARATOR, array_filter([$languagePath, $namespace, $locale, $subFolders]));
 
         $this->ensureDirectoryExists($groupBasePath);
 
-        return $groupBasePath;
+        return [$groupBasePath, $group];
     }
 
     private function ensureDirectoryExists(string $path): void
@@ -138,7 +143,7 @@ class TranslationFileWriter
     private function encodePhpTranslations(array $translations): string
     {
         if ($this->config->shouldGroupKeysInArray()) {
-            $translations = array_undot($translations);
+            $translations = ct_array_undot($translations);
         }
 
         ksort($translations);

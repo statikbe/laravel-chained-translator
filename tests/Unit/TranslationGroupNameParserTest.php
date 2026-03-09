@@ -21,23 +21,21 @@ describe('TranslationGroupNameParser', function () {
         expect($parser->isJsonGroup('other'))->toBeFalse();
     });
 
-    it('pulls namespace from group string', function () {
+    it('extracts namespace from group string', function () {
         $config = getTestConfig();
         $parser = new TranslationGroupNameParser($config);
-        $group = 'vendor::messages';
 
-        $namespace = $parser->pullNamespace($group);
+        [$namespace, $group] = $parser->extractNamespace('vendor::messages');
 
         expect($namespace)->toBe('vendor');
         expect($group)->toBe('messages');
     });
 
-    it('returns null when no namespace in group', function () {
+    it('returns null namespace when no namespace in group', function () {
         $config = getTestConfig();
         $parser = new TranslationGroupNameParser($config);
-        $group = 'messages';
 
-        $namespace = $parser->pullNamespace($group);
+        [$namespace, $group] = $parser->extractNamespace('messages');
 
         expect($namespace)->toBeNull();
         expect($group)->toBe('messages');
@@ -46,31 +44,28 @@ describe('TranslationGroupNameParser', function () {
     it('handles namespaced groups with subfolders', function () {
         $config = getTestConfig();
         $parser = new TranslationGroupNameParser($config);
-        $group = 'vendor::sub/folder/messages';
 
-        $namespace = $parser->pullNamespace($group);
+        [$namespace, $group] = $parser->extractNamespace('vendor::sub/folder/messages');
 
         expect($namespace)->toBe('vendor');
         expect($group)->toBe('sub/folder/messages');
     });
 
-    it('pulls subfolders from group string', function () {
+    it('extracts subfolders from group string', function () {
         $config = getTestConfig();
         $parser = new TranslationGroupNameParser($config);
-        $group = 'sub/folder/messages';
 
-        $subfolders = $parser->pullSubfolders($group);
+        [$subfolders, $group] = $parser->extractSubfolders('sub/folder/messages');
 
         expect($subfolders)->toBe('sub/folder');
         expect($group)->toBe('messages');
     });
 
-    it('returns null when no subfolders in group', function () {
+    it('returns null subfolders when no subfolders in group', function () {
         $config = getTestConfig();
         $parser = new TranslationGroupNameParser($config);
-        $group = 'messages';
 
-        $subfolders = $parser->pullSubfolders($group);
+        [$subfolders, $group] = $parser->extractSubfolders('messages');
 
         expect($subfolders)->toBeNull();
         expect($group)->toBe('messages');
@@ -79,9 +74,8 @@ describe('TranslationGroupNameParser', function () {
     it('handles deeply nested subfolders', function () {
         $config = getTestConfig();
         $parser = new TranslationGroupNameParser($config);
-        $group = 'a/b/c/d/messages';
 
-        $subfolders = $parser->pullSubfolders($group);
+        [$subfolders, $group] = $parser->extractSubfolders('a/b/c/d/messages');
 
         expect($subfolders)->toBe('a/b/c/d');
         expect($group)->toBe('messages');
@@ -90,24 +84,22 @@ describe('TranslationGroupNameParser', function () {
     it('handles single level subfolder', function () {
         $config = getTestConfig();
         $parser = new TranslationGroupNameParser($config);
-        $group = 'admin/messages';
 
-        $subfolders = $parser->pullSubfolders($group);
+        [$subfolders, $group] = $parser->extractSubfolders('admin/messages');
 
         expect($subfolders)->toBe('admin');
         expect($group)->toBe('messages');
     });
 
-    it('can chain pullNamespace and pullSubfolders', function () {
+    it('can chain extractNamespace and extractSubfolders', function () {
         $config = getTestConfig();
         $parser = new TranslationGroupNameParser($config);
-        $group = 'vendor::sub/folder/messages';
 
-        $namespace = $parser->pullNamespace($group);
-        $subfolders = $parser->pullSubfolders($group);
+        [$namespace, $afterNamespace] = $parser->extractNamespace('vendor::sub/folder/messages');
+        [$subfolders, $groupName] = $parser->extractSubfolders($afterNamespace);
 
         expect($namespace)->toBe('vendor');
         expect($subfolders)->toBe('sub/folder');
-        expect($group)->toBe('messages');
+        expect($groupName)->toBe('messages');
     });
 });

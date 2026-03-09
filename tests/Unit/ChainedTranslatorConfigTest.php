@@ -36,12 +36,13 @@ describe('ChainedTranslatorConfig', function () {
         expect($config->shouldAddGitignoreToCustomLangDirectory())->toBeFalse();
     });
 
-    it('treats gitignore string values correctly', function () {
+    it('throws when gitignore config value is not a boolean', function () {
         config()->set('laravel-chained-translator.add_gitignore_to_custom_lang_directory', 'false');
         $config = new ChainedTranslatorConfig();
 
-        // Actually, the code does strict comparison with === true, so any non-true value returns false
-        expect($config->shouldAddGitignoreToCustomLangDirectory())->toBeFalse();
+        // Config::boolean() enforces strict type — non-boolean values throw an exception
+        expect(fn () => $config->shouldAddGitignoreToCustomLangDirectory())
+            ->toThrow(\InvalidArgumentException::class);
     });
 
     it('returns default group keys setting', function () {

@@ -4,34 +4,13 @@ declare(strict_types=1);
 
 use Illuminate\Support\Arr;
 
-// Global namespace - for backward compatibility with external packages
-if (!function_exists('is_php_file')) {
-    /**
-     * Check if a file has a PHP extension.
-     */
-    function is_php_file(string $filename): bool
-    {
-        return strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'php';
-    }
-}
-
-if (!function_exists('is_json_file')) {
-    /**
-     * Check if a file has a JSON extension.
-     */
-    function is_json_file(string $filename): bool
-    {
-        return strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'json';
-    }
-}
-
-if (!function_exists('array_undot')) {
+if (!function_exists('ct_array_undot')) {
     /**
      * Expands a list with keys with dots into a hierarchical list.
      * @param array<string, mixed> $dotNotationArray
      * @return array<string, mixed>
      */
-    function array_undot(array $dotNotationArray): array
+    function ct_array_undot(array $dotNotationArray): array
     {
         $array = [];
         /** @var mixed $value */

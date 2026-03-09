@@ -50,6 +50,14 @@ class ChainedTranslationManager
     }
 
     /**
+     * Returns the package configuration accessor.
+     */
+    public function config(): ChainedTranslatorConfig
+    {
+        return $this->fileWriter->getConfig();
+    }
+
+    /**
      * Saves a translation.
      *
      * @throws SaveTranslationFileException
@@ -84,12 +92,11 @@ class ChainedTranslationManager
             ));
         }
 
-        $namespacedGroup = $group;
-        $namespace = $this->nameParser->pullNamespace($namespacedGroup);
+        [$namespace, $groupName] = $this->nameParser->extractNamespace($group);
 
         return $this->compressHierarchicalTranslationsToDotNotation($this->translationLoader->load(
             $locale,
-            $namespacedGroup,
+            $groupName,
             $namespace,
         ));
     }
@@ -131,10 +138,9 @@ class ChainedTranslationManager
             return collect($this->translationLoader->load($locale, '*', '*'));
         }
 
-        $namespacedGroup = $group;
-        $namespace = $this->nameParser->pullNamespace($namespacedGroup);
+        [$namespace, $groupName] = $this->nameParser->extractNamespace($group);
 
-        return collect($this->translationLoader->load($locale, $namespacedGroup, $namespace));
+        return collect($this->translationLoader->load($locale, $groupName, $namespace));
     }
 
     /**

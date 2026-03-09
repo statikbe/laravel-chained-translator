@@ -14,6 +14,11 @@ use Statikbe\LaravelChainedTranslator\Console\Commands\MergeTranslationsCommand;
 class BaseTranslationServiceProvider extends LaravelTranslationServiceProvider
 {
     /**
+     * The package name used for config, service container bindings, etc.
+     */
+    public const NAME = 'laravel-chained-translator';
+
+    /**
      * Bootstrap any application services.
      *
      * @return void
@@ -22,7 +27,7 @@ class BaseTranslationServiceProvider extends LaravelTranslationServiceProvider
     {
         //publish config:
         $this->publishes([
-            __DIR__ . '/../config/laravel-chained-translator.php' => config_path('laravel-chained-translator.php'),
+            __DIR__ . '/../config/' . self::NAME . '.php' => config_path(self::NAME . '.php'),
         ], 'config');
 
         //register commands:
@@ -41,7 +46,7 @@ class BaseTranslationServiceProvider extends LaravelTranslationServiceProvider
     public function register(): void
     {
         //merge config:
-        $this->mergeConfigFrom(__DIR__ . '/../config/laravel-chained-translator.php', 'laravel-chained-translator');
+        $this->mergeConfigFrom(__DIR__ . '/../config/' . self::NAME . '.php', self::NAME);
 
         parent::register();
     }
