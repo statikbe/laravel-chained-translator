@@ -1,310 +1,169 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Statikbe\LaravelChainedTranslator;
 
-use Brick\VarExporter\ExportException;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
 use Statikbe\LaravelChainedTranslator\Exceptions\SaveTranslationFileException;
-use Symfony\Component\Finder\SplFileInfo;
-use Brick\VarExporter\VarExporter;
-
 
 class ChainedTranslationManager
 {
+    private readonly TranslationGroupFinder $groupFinder;
+    private readonly TranslationFileWriter $fileWriter;
+    private readonly TranslationGroupNameParser $nameParser;
+
+    /**
+     * The filesystem instance.
+     *
+     * @deprecated Use TranslationFileWriter instead. Kept for backward compatibility.
+     */
     protected Filesystem $files;
 
     /**
-     * The default path for the loader.
+     * The custom language path.
+     *
+     * @deprecated Use TranslationFileWriter instead. Kept for backward compatibility.
      */
     protected string $path;
-    private ChainLoader $translationLoader;
 
     /**
-     * Create a new file loader instance.
-     *
-     * @param Filesystem $files
-     * @param ChainLoader $translationLoader
-     * @param string $path
+     * Create a new ChainedTranslationManager instance.
      */
-    public function __construct(Filesystem $files, ChainLoader $translationLoader, string $path)
-    {
-        $this->path = $path;
+    public function __construct(
+        Filesystem $files,
+        private readonly ChainLoader $translationLoader,
+        string $path,
+        ?ChainedTranslatorConfig $config = null,
+    ) {
+        // Keep references for backward compatibility with subclasses
         $this->files = $files;
-        $this->translationLoader = $translationLoader;
+        $this->path = $path;
+
+        $config ??= new ChainedTranslatorConfig();
+        $this->nameParser = new TranslationGroupNameParser($config);
+        $this->groupFinder = new TranslationGroupFinder($files, $this->nameParser);
+        $this->fileWriter = new TranslationFileWriter($files, $this->nameParser, $path, $config);
     }
 
     /**
-     * Saves a translation
+     * Returns the package configuration accessor.
+     */
+    public function config(): ChainedTranslatorConfig
+    {
+        return $this->fileWriter->getConfig();
+    }
+
+    /**
+     * Saves a translation.
      *
-     * @param string $locale
-     * @param string $group
-     * @param string $key
-     * @param string $translation
-     * @return void
      * @throws SaveTranslationFileException
      */
     public function save(string $locale, string $group, string $key, string $translation): void
     {
         $translations = $this->getCustomTranslations($locale, $group);
-
         $translations->put($key, $translation);
-
-        $this->saveGroupTranslations($locale, $group, $translations);
+        $this->fileWriter->writeGroupTranslations($locale, $group, $translations);
     }
 
     /**
-     * Returns a list of translation groups. A translation group is the file name of the PHP files in the lang
-     * directory.
-     * @return array
+     * Returns a list of translation groups (file names of PHP files in the lang directory).
+     *
+     * @return array<int, string>
      */
     public function getTranslationGroups(): array
     {
-        $groups = [];
-        $langDirPath = function_exists('lang_path') ? lang_path() : resource_path('lang');
-        $filesAndDirs = $this->files->allFiles($langDirPath);
-        foreach ($filesAndDirs as $file) {
-            /* @var SplFileInfo $file */
-            if (!$file->isDir()) {
-                $relativePath = $file->getRelativePath();
-                $group = null;
-                $prefix = null;
-                $subFolders = null;
-                $vendorPath = strstr($relativePath, 'vendor');
-
-                if ($vendorPath) {
-                    $namespace = null;
-                    $vendorPath = Str::replaceFirst('vendor'.DIRECTORY_SEPARATOR, null, $vendorPath);
-
-                    //remove locale from vendor path for php files, json files have the locale in the file name, eg. en.json
-                    if (strtolower($file->getExtension()) === 'php') {
-                        $options = explode(DIRECTORY_SEPARATOR, $vendorPath);
-                        $namespace = $options[0];
-                        unset($options[0]);
-                        unset($options[1]);
-                        $subFolders = implode(DIRECTORY_SEPARATOR, array_filter($options));
-                    }
-
-                    $prefix = $namespace.'::'.$prefix;
-                } else {
-                    if (strtolower($file->getExtension()) === 'php') {
-                        $options = explode(DIRECTORY_SEPARATOR, $relativePath);
-                        unset($options[0]);
-                        $subFolders = implode(DIRECTORY_SEPARATOR, array_filter($options));
-                    }
-                }
-                if (strtolower($file->getExtension()) === 'php') {
-                    $group = $prefix.implode(DIRECTORY_SEPARATOR, array_filter([$subFolders, $file->getFilenameWithoutExtension()]));
-                } else {
-                    if (strtolower($file->getExtension()) === 'json') {
-                        $group = $this->getJsonGroupName();
-                    }
-                }
-
-                if ($group) {
-                    $groups[$group] = $group;
-                }
-            }
-        }
-
-        return array_values($groups);
+        return $this->groupFinder->findAll();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getTranslationsForGroup(string $locale, string $group): array
     {
-        $namespace = $this->pullNamespaceFromGroup($group);
-
-        if ($group === $this->getJsonGroupName()) {
-            return $this->compressHierarchicalTranslationsToDotNotation($this->translationLoader->load($locale, '*', '*'));
+        if ($this->nameParser->isJsonGroup($group)) {
+            return $this->compressHierarchicalTranslationsToDotNotation($this->translationLoader->load(
+                $locale,
+                '*',
+                '*',
+            ));
         }
 
-        return $this->compressHierarchicalTranslationsToDotNotation($this->translationLoader->load($locale, $group, $namespace ?? null));
+        [$namespace, $groupName] = $this->nameParser->extractNamespace($group);
+
+        return $this->compressHierarchicalTranslationsToDotNotation($this->translationLoader->load(
+            $locale,
+            $groupName,
+            $namespace,
+        ));
     }
 
     /**
      * @throws SaveTranslationFileException
      */
-    public function mergeChainedTranslationsIntoDefaultTranslations(string $locale): void {
+    public function mergeChainedTranslationsIntoDefaultTranslations(string $locale): void
+    {
         $defaultLangPath = function_exists('lang_path') ? lang_path() : resource_path('lang');
-        if (! $this->localeFolderExists($locale)) {
-            $this->createLocaleFolder($locale);
+
+        if (!$this->fileWriter->localeFolderExists($locale)) {
+            $this->fileWriter->createLocaleFolder($locale);
         }
-        $groups = $this->getTranslationGroups();
 
-        foreach($groups as $group) {
-            $groupWithNamespace = $group;
-            $namespace = $this->pullNamespaceFromGroup($group);
-
-            if ($group === $this->getJsonGroupName()) {
-                $translations = collect($this->translationLoader->load($locale, '*', '*'));
-            } else {
-                $translations = collect($this->translationLoader->load($locale,  $group, $namespace ?? null));
-            }
+        foreach ($this->groupFinder->findAll() as $group) {
+            $translations = $this->loadTranslationsForGroup($locale, $group);
 
             if ($translations->isNotEmpty()) {
-                $this->saveGroupTranslations($locale, $groupWithNamespace, $translations, $defaultLangPath);
+                $this->fileWriter->writeGroupTranslations($locale, $group, $translations, $defaultLangPath);
             }
         }
     }
 
+    /**
+     * @return Collection<string, mixed>
+     */
+    public function getCustomTranslations(string $locale, string $group): Collection
+    {
+        return $this->fileWriter->readGroupTranslations($locale, $group);
+    }
+
+    /**
+     * @return Collection<string, mixed>
+     */
+    private function loadTranslationsForGroup(string $locale, string $group): Collection
+    {
+        if ($this->nameParser->isJsonGroup($group)) {
+            return collect($this->translationLoader->load($locale, '*', '*'));
+        }
+
+        [$namespace, $groupName] = $this->nameParser->extractNamespace($group);
+
+        return collect($this->translationLoader->load($locale, $groupName, $namespace));
+    }
+
+    /**
+     * @param array<string, mixed> $translations
+     * @return array<string, mixed>
+     */
     private function compressHierarchicalTranslationsToDotNotation(array $translations): array
     {
         $iteratorIterator = new RecursiveIteratorIterator(new RecursiveArrayIterator($translations));
         $result = [];
+        // @mago-expect analysis:mixed-assignment
         foreach ($iteratorIterator as $leafValue) {
+            /** @var array<int, string> $keys */
             $keys = [];
             foreach (range(0, $iteratorIterator->getDepth()) as $depth) {
-                $keys[] = $iteratorIterator->getSubIterator($depth)->key();
+                $subIterator = $iteratorIterator->getSubIterator($depth);
+                if ($subIterator !== null) {
+                    $keys[] = (string) $subIterator->key();
+                }
             }
-            $result[ join('.', $keys) ] = $leafValue;
+            $result[implode('.', $keys)] = $leafValue;
         }
+
         return $result;
-    }
-
-    private function localeFolderExists(string $locale): bool
-    {
-        return $this->files->exists($this->path.DIRECTORY_SEPARATOR.$locale);
-    }
-
-    private function createLocaleFolder(string $locale): bool
-    {
-        return $this->files->makeDirectory($this->path.DIRECTORY_SEPARATOR.$locale, 0755, true);
-    }
-
-    public function getCustomTranslations(string $locale, string $group): Collection
-    {
-        $groupPath = $this->getGroupPath($locale, $group);
-
-        if($this->files->exists($groupPath)) {
-            if ($group === $this->getJsonGroupName()){
-                return collect(json_decode(file_get_contents($groupPath)));
-            }
-            return collect($this->files->getRequire($groupPath));
-        }
-
-        return collect([]);
-    }
-
-    /**
-     * @throws SaveTranslationFileException
-     */
-    private function saveGroupTranslations(string $locale, string $group, Collection $translations, string $languagePath=null): void
-    {
-        $groupPath = $this->getGroupPath($locale, $group, $languagePath);
-        $translations = $translations->toArray();
-
-        if ($group === $this->getJsonGroupName()){
-            ksort($translations);
-
-            $contents = json_encode($translations, JSON_PRETTY_PRINT);
-        } else {
-            //Decide if dotted keys should stay or should be grouped into arrays
-            if (config('laravel-chained-translator.group_keys_in_array', true)){
-                $translations = array_undot($translations);
-            }
-            ksort($translations);
-
-            try {
-                $contents = "<?php\n\nreturn " . VarExporter::export($translations) . ';' . \PHP_EOL;
-            }
-            catch(ExportException $ex){
-                throw new SaveTranslationFileException('The translations could not be transformed to the .php translation file.', 0, $ex);
-            }
-        }
-
-        $success = $this->files->put($groupPath, $contents);
-
-        if(!$success){
-            throw new SaveTranslationFileException("The translation file $groupPath could not be saved.");
-        }
-
-        // clear the opcache of the group file, because otherwise in the next request, an old cached file can be read in
-        // and the saved translation can be overwritten...
-        if(function_exists('opcache_invalidate')) {
-            opcache_invalidate($groupPath, true);
-        }
-    }
-
-    private function getGroupPath(string $locale, string $group, string $languagePath=null): string
-    {
-        if ($group === $this->getJsonGroupName()) {
-            return ($languagePath ?? $this->path).DIRECTORY_SEPARATOR.$locale.'.json';
-        }
-
-        $basePath = $this->getGroupBasePath($locale, $group, $languagePath);
-
-        $this->pullNamespaceFromGroup($group);
-        $this->pullSubfoldersFromGroup($group);
-
-        return $basePath.DIRECTORY_SEPARATOR.$group.'.php';
-    }
-
-    private function getGroupBasePath(string $locale, string $group, string $languagePath=null): string
-    {
-        $languagePath = ($languagePath ?? $this->path);
-
-        $namespace = $this->pullNamespaceFromGroup($group);
-        if ($namespace){
-            $namespace = 'vendor'.DIRECTORY_SEPARATOR.$namespace;
-        }
-        $subFolders = $this->pullSubfoldersFromGroup($group);
-
-        $groupBasePath = implode(DIRECTORY_SEPARATOR, array_filter([$languagePath, $namespace, $locale, $subFolders]));
-
-        //create directory if not exists:
-        $this->createDirectory($groupBasePath);
-
-        return $groupBasePath;
-    }
-
-    private function createDirectory(string $path): void
-    {
-        if(!$this->files->exists($path)){
-            $this->files->makeDirectory($path,  0755, true);
-        }
-    }
-
-    private function pullNamespaceFromGroup(string &$group): ?string
-    {
-        $namespace = null;
-
-        if (Str::contains($group, '::')) {
-            $namespace = Str::before($group, '::');
-            $group = Str::after($group, '::');
-        }
-
-        return $namespace;
-    }
-
-    private function pullSubfoldersFromGroup(string &$group): ?string
-    {
-        $subFolders = null;
-        if (Str::contains($group, DIRECTORY_SEPARATOR)){
-            $subFolders = Str::beforeLast($group, DIRECTORY_SEPARATOR);
-            $group = Str::afterLast($group, DIRECTORY_SEPARATOR);
-        }
-
-        return $subFolders;
-    }
-
-    /**
-     * @throws SaveTranslationFileException
-     */
-    private function saveJson(string $locale, string $key, string $translation): void
-    {
-        $jsonGroup = $this->getJsonGroupName();
-        $translations = $this->getCustomTranslations($locale, $jsonGroup);
-
-        $translations->put($key, $translation);
-
-        $this->saveGroupTranslations($locale, $jsonGroup, $translations);
-    }
-
-    private function getJsonGroupName(): string
-    {
-        return config('laravel-chained-translator.json_group', 'single');
     }
 }

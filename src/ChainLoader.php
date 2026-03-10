@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Statikbe\LaravelChainedTranslator;
 
 use Illuminate\Contracts\Translation\Loader;
@@ -11,6 +13,8 @@ class ChainLoader implements Loader
 {
     /**
      * Loader instances of the chain
+     *
+     * @var array<int, Loader>
      */
     private array $loaders = [];
 
@@ -25,9 +29,10 @@ class ChainLoader implements Loader
     {
         if ($prepend) {
             array_unshift($this->loaders, $loader);
-        } else {
-            $this->loaders[] = $loader;
+            return;
         }
+
+        $this->loaders[] = $loader;
     }
 
     /**
@@ -39,11 +44,13 @@ class ChainLoader implements Loader
     public function removeLoader(Loader $loader): bool
     {
         foreach ($this->loaders as $i => $l) {
-            if ($l === $loader) {
-                unset($this->loaders[$i]);
-
-                return true;
+            if ($l !== $loader) {
+                continue;
             }
+
+            unset($this->loaders[$i]);
+
+            return true;
         }
 
         return false;
@@ -52,7 +59,7 @@ class ChainLoader implements Loader
     /**
      * Gets all the chained loaders
      *
-     * @return array
+     * @return array<int, Loader>
      */
     public function loaders(): array
     {
@@ -65,13 +72,15 @@ class ChainLoader implements Loader
      * @param  string  $locale
      * @param  string  $group
      * @param  string|null  $namespace
-     * @return array
+     * @return array<string, mixed>
      */
     public function load($locale, $group, $namespace = null): array
     {
+        /** @var array<string, mixed> $messages */
         $messages = [];
 
         foreach ($this->loaders as $loader) {
+            /** @var array<string, mixed> $messages */
             $messages = array_replace_recursive($loader->load($locale, $group, $namespace), $messages);
         }
 
@@ -87,9 +96,9 @@ class ChainLoader implements Loader
      */
     public function addNamespace($namespace, $hint): void
     {
-        foreach ($this->loaders as $loader) {
+        collect($this->loaders)->each(static function (Loader $loader) use ($namespace, $hint): void {
             $loader->addNamespace($namespace, $hint);
-        }
+        });
     }
 
     /**
@@ -100,25 +109,26 @@ class ChainLoader implements Loader
      */
     public function addJsonPath($path): void
     {
-        foreach ($this->loaders as $loader) {
+        collect($this->loaders)->each(static function (Loader $loader) use ($path): void {
             $loader->addJsonPath($path);
-        }
+        });
     }
 
     /**
      * Get an array of all the registered namespaces.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function namespaces(): array
     {
+        /** @var array<string, mixed> $namespaces */
         $namespaces = [];
 
         foreach ($this->loaders as $loader) {
+            /** @var array<string, mixed> $namespaces */
             $namespaces += $loader->namespaces();
         }
 
         return $namespaces;
     }
-
 }

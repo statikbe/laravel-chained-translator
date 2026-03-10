@@ -6,6 +6,11 @@ on:
       - "**.php"
       - ".github/workflows/run-tests.yml"
       - "composer.json"
+  pull_request:
+    paths:
+      - "**.php"
+      - ".github/workflows/run-tests.yml"
+      - "composer.json"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -22,17 +27,22 @@ jobs:
         php: [8.2, 8.3, 8.4]
         laravel: [11.*, 12.*]
         stability: [prefer-stable]
+        exclude:
+          - laravel: 12.*
+            php: "8.2"
         include:
           - laravel: 11.*
             testbench: 9.*
+            pest: 3.*
           - laravel: 12.*
             testbench: 10.*
+            pest: 4.*
 
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -49,7 +59,7 @@ jobs:
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
-          composer require --dev "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer require --dev "orchestra/testbench:${{ matrix.testbench }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest }}" --no-interaction --no-update
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
       - name: List Installed Dependencies
