@@ -8,3 +8,4 @@ yarn-error.log
 .phpunit.result.cache
 .phpunit.cache/
 composer.lock
+.claude/settings.local.json

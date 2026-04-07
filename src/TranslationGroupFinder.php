@@ -63,15 +63,16 @@ class TranslationGroupFinder
 
     private function resolveVendorGroup(SplFileInfo $file, string $vendorPath): ?string
     {
-        $vendorPath = Str::replaceFirst('vendor' . DIRECTORY_SEPARATOR, '', $vendorPath);
+        $vendorPath = str_replace('\\', '/', $vendorPath);
+        $vendorPath = Str::replaceFirst('vendor/', '', $vendorPath);
         $subFolders = null;
         $namespace = null;
 
         if (self::isPhpFile($file->getRelativePathname())) {
-            $options = explode(DIRECTORY_SEPARATOR, $vendorPath);
+            $options = explode('/', $vendorPath);
             $namespace = $options[0];
             unset($options[0], $options[1]);
-            $subFolders = implode(DIRECTORY_SEPARATOR, array_filter($options));
+            $subFolders = implode('/', array_filter($options));
         }
 
         if (self::isJsonFile($file->getRelativePathname())) {
@@ -84,8 +85,7 @@ class TranslationGroupFinder
 
         $prefix = ($namespace ?? '') . '::';
 
-        return $prefix
-        . implode(DIRECTORY_SEPARATOR, array_filter([$subFolders, $file->getFilenameWithoutExtension()]));
+        return $prefix . implode('/', array_filter([$subFolders, $file->getFilenameWithoutExtension()]));
     }
 
     private function resolveRegularGroup(SplFileInfo $file, string $relativePath): ?string
@@ -98,11 +98,12 @@ class TranslationGroupFinder
             return null;
         }
 
-        $options = explode(DIRECTORY_SEPARATOR, $relativePath);
+        $relativePath = str_replace('\\', '/', $relativePath);
+        $options = explode('/', $relativePath);
         unset($options[0]);
-        $subFolders = implode(DIRECTORY_SEPARATOR, array_filter($options));
+        $subFolders = implode('/', array_filter($options));
 
-        return implode(DIRECTORY_SEPARATOR, array_filter([$subFolders, $file->getFilenameWithoutExtension()]));
+        return implode('/', array_filter([$subFolders, $file->getFilenameWithoutExtension()]));
     }
 
     /**

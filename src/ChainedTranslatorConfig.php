@@ -29,7 +29,7 @@ class ChainedTranslatorConfig
      */
     public function shouldGroupKeysInArray(): bool
     {
-        return Config::boolean(BaseTranslationServiceProvider::NAME . '.group_keys_in_array', true);
+        return Config::boolean(BaseTranslationServiceProvider::NAME . '.group_keys_in_array', false);
     }
 
     /**
@@ -37,6 +37,6 @@ class ChainedTranslatorConfig
      */
     public function getJsonGroupName(): string
     {
-        return Config::string(BaseTranslationServiceProvider::NAME . '.json_group', 'single');
+        return Config::string(BaseTranslationServiceProvider::NAME . '.json_group', 'json-file');
     }
 }

@@ -121,6 +121,7 @@ class TranslationFileWriter
         }
 
         [$subFolders, $group] = $this->nameParser->extractSubfolders($group);
+        $subFolders = $subFolders !== null ? str_replace('/', DIRECTORY_SEPARATOR, $subFolders) : null;
 
         $groupBasePath = implode(DIRECTORY_SEPARATOR, array_filter([$languagePath, $namespace, $locale, $subFolders]));
 

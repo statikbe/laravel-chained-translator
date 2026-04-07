@@ -53,10 +53,10 @@ class TranslationGroupNameParser
      */
     public function extractSubfolders(string $group): array
     {
-        if (!Str::contains($group, DIRECTORY_SEPARATOR)) {
+        if (!Str::contains($group, '/')) {
             return [null, $group];
         }
 
-        return [Str::beforeLast($group, DIRECTORY_SEPARATOR), Str::afterLast($group, DIRECTORY_SEPARATOR)];
+        return [Str::beforeLast($group, '/'), Str::afterLast($group, '/')];
     }
 }

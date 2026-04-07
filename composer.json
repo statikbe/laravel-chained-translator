@@ -64,6 +64,11 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "analyse": "vendor/bin/mago lint",
+        "format": "vendor/bin/mago format"
+    },
     "require-dev": {
         "carthage-software/mago": "^1.13",
         "orchestra/testbench": "^9.0|^10.0|^11.0",

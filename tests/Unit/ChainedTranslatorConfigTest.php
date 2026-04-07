@@ -48,13 +48,6 @@ describe('ChainedTranslatorConfig', function () {
     it('returns default group keys setting', function () {
         $config = new ChainedTranslatorConfig();
 
-        expect($config->shouldGroupKeysInArray())->toBeTrue();
-    });
-
-    it('returns group keys setting from config when false', function () {
-        config()->set('laravel-chained-translator.group_keys_in_array', false);
-        $config = new ChainedTranslatorConfig();
-
         expect($config->shouldGroupKeysInArray())->toBeFalse();
     });
 
@@ -65,10 +58,17 @@ describe('ChainedTranslatorConfig', function () {
         expect($config->shouldGroupKeysInArray())->toBeTrue();
     });
 
+    it('returns group keys setting from config when false', function () {
+        config()->set('laravel-chained-translator.group_keys_in_array', false);
+        $config = new ChainedTranslatorConfig();
+
+        expect($config->shouldGroupKeysInArray())->toBeFalse();
+    });
+
     it('returns default JSON group name', function () {
         $config = new ChainedTranslatorConfig();
 
-        expect($config->getJsonGroupName())->toBe('single');
+        expect($config->getJsonGroupName())->toBe('json-file');
     });
 
     it('returns JSON group name from config', function () {
@@ -103,7 +103,7 @@ describe('ChainedTranslatorConfig', function () {
 
         expect($config->getCustomLangDirectoryName())->toBe('only-this');
         expect($config->shouldAddGitignoreToCustomLangDirectory())->toBeTrue();
-        expect($config->shouldGroupKeysInArray())->toBeTrue();
-        expect($config->getJsonGroupName())->toBe('single');
+        expect($config->shouldGroupKeysInArray())->toBeFalse();
+        expect($config->getJsonGroupName())->toBe('json-file');
     });
 });

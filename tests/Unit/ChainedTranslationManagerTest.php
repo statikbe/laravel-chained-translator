@@ -107,7 +107,7 @@ it('can get translations for group with JSON loader', function (): void {
 
     $manager = new ChainedTranslationManager($this->files, $this->loader, $this->testPath, $this->config);
 
-    $translations = $manager->getTranslationsForGroup('en', 'single');
+    $translations = $manager->getTranslationsForGroup('en', 'json-file');
 
     expect($translations)->toBeArray();
     expect($translations)->toHaveKey('hello');
