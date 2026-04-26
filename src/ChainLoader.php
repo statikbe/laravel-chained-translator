@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Statikbe\LaravelChainedTranslator;
 
 use Illuminate\Contracts\Translation\Loader;
+use Illuminate\Support\Arr;
+use ReflectionClass;
 
 /**
  * Chain of translation loaders
@@ -19,6 +21,17 @@ class ChainLoader implements Loader
     private array $loaders = [];
 
     /**
+     * Aggregated translation paths from inner loaders.
+     *
+     * Exposed (non-private) so tools that introspect Laravel's translation
+     * loader via reflection (e.g. barryvdh/laravel-ide-helper's translations
+     * template) can discover the search paths.
+     *
+     * @var array<int, string>
+     */
+    protected array $paths = [];
+
+    /**
      * Add a translation loader to the chain
      *
      * @param Loader $loader
@@ -29,10 +42,11 @@ class ChainLoader implements Loader
     {
         if ($prepend) {
             array_unshift($this->loaders, $loader);
-            return;
+        } else {
+            $this->loaders[] = $loader;
         }
 
-        $this->loaders[] = $loader;
+        $this->refreshPaths();
     }
 
     /**
@@ -49,11 +63,58 @@ class ChainLoader implements Loader
             }
 
             unset($this->loaders[$i]);
+            $this->refreshPaths();
 
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Aggregated translation paths from all inner loaders.
+     *
+     * @return array<int, string>
+     */
+    public function paths(): array
+    {
+        return $this->paths;
+    }
+
+    /**
+     * Recompute the aggregated paths from inner loaders.
+     */
+    private function refreshPaths(): void
+    {
+        $paths = [];
+
+        foreach ($this->loaders as $loader) {
+            if (method_exists($loader, 'paths')) {
+                /** @var array<int, string>|string $value */
+                $value = $loader->paths();
+                $paths = array_merge($paths, Arr::wrap($value));
+
+                continue;
+            }
+
+            $reflection = new ReflectionClass($loader);
+
+            if ($reflection->hasProperty('paths')) {
+                /** @var array<int, string>|string $value */
+                $value = $reflection->getProperty('paths')->getValue($loader);
+                $paths = array_merge($paths, Arr::wrap($value));
+
+                continue;
+            }
+
+            if ($reflection->hasProperty('path')) {
+                /** @var array<int, string>|string $value */
+                $value = $reflection->getProperty('path')->getValue($loader);
+                $paths = array_merge($paths, Arr::wrap($value));
+            }
+        }
+
+        $this->paths = array_values(array_unique(array_filter($paths, 'is_string')));
     }
 
     /**
