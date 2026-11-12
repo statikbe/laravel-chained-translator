@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Statikbe\LaravelChainedTranslator\Exceptions\InvalidTranslationPathException;
 use Statikbe\LaravelChainedTranslator\TranslationGroupNameParser;
 
 describe('TranslationGroupNameParser', function () {
@@ -102,4 +103,59 @@ describe('TranslationGroupNameParser', function () {
         expect($subfolders)->toBe('sub/folder');
         expect($groupName)->toBe('messages');
     });
+
+    it('accepts valid locales', function (string $locale) {
+        $parser = new TranslationGroupNameParser(getTestConfig());
+
+        $parser->assertValidLocale($locale);
+
+        expect(true)->toBeTrue();
+    })->with(['en', 'en_US', 'pt-BR', 'zh_Hant']);
+
+    it('rejects locales that are not a single safe path segment', function (string $locale) {
+        $parser = new TranslationGroupNameParser(getTestConfig());
+
+        expect(fn() => $parser->assertValidLocale($locale))->toThrow(InvalidTranslationPathException::class);
+    })->with(['', '.', '..', '../en', 'en/..', 'en/../..', 'en\\..', '/etc', "en\0", "en\n", 'en.json']);
+
+    it('accepts valid groups', function (string $group) {
+        $parser = new TranslationGroupNameParser(getTestConfig());
+
+        $parser->assertValidGroup($group);
+
+        expect(true)->toBeTrue();
+    })->with([
+        'messages',
+        'admin/messages',
+        'admin/sub-folder/my_messages',
+        'filament-panels::layout',
+        'vendor::sub/folder/messages',
+        'messages.v2',
+        'json-file',
+    ]);
+
+    it('rejects groups that could resolve outside the language directory', function (string $group) {
+        $parser = new TranslationGroupNameParser(getTestConfig());
+
+        expect(fn() => $parser->assertValidGroup($group))->toThrow(InvalidTranslationPathException::class);
+    })->with([
+        '',
+        '..',
+        '../messages',
+        '../../config/app',
+        'admin/../../messages',
+        'admin/..',
+        './messages',
+        '/messages',
+        'admin//messages',
+        'admin/',
+        '.hidden',
+        '..::messages',
+        'foo/..::messages',
+        '::messages',
+        'vendor::../messages',
+        'vendor::a::b',
+        'admin\\..\\messages',
+        "messages\0",
+    ]);
 });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Filesystem\Filesystem;
 use Statikbe\LaravelChainedTranslator\ChainedTranslatorConfig;
+use Statikbe\LaravelChainedTranslator\Exceptions\InvalidTranslationPathException;
 use Statikbe\LaravelChainedTranslator\Exceptions\SaveTranslationFileException;
 use Statikbe\LaravelChainedTranslator\TranslationFileWriter;
 use Statikbe\LaravelChainedTranslator\TranslationGroupNameParser;
@@ -293,5 +294,48 @@ describe('TranslationFileWriter', function (): void {
         expect(fn() => $writer->writeGroupTranslations('en', 'messages', collect([
             'key' => 'value',
         ])))->toThrow(SaveTranslationFileException::class);
+    });
+
+    it('refuses to read or write translation files outside the language directory', function (
+        string $locale,
+        string $group,
+    ): void {
+        /** @var string $testPath */
+        $testPath = $this->testPath;
+        $languagePath = $testPath . '/lang-custom';
+        createTestDirectory($languagePath . '/en');
+        $outsideFile = $testPath . '/outside.php';
+        file_put_contents($outsideFile, '<?php return ["original" => "value"];');
+
+        $config = getTestConfig(['json_group' => 'json-file']);
+        $parser = new TranslationGroupNameParser($config);
+        $writer = new TranslationFileWriter(new Filesystem(), $parser, $languagePath, $config);
+
+        expect(fn() => $writer->readGroupTranslations($locale, $group))->toThrow(
+            InvalidTranslationPathException::class,
+        );
+        expect(fn() => $writer->writeGroupTranslations($locale, $group, collect(['key' => 'value'])))->toThrow(
+            InvalidTranslationPathException::class,
+        );
+        expect(file_get_contents($outsideFile))->toBe('<?php return ["original" => "value"];');
+        expect(array_values(array_diff(scandir($testPath), ['.', '..'])))->toBe(['lang-custom', 'outside.php']);
+        expect(array_values(array_diff(scandir($languagePath), ['.', '..'])))->toBe(['en']);
+    })->with([
+        'group traversal' => ['en', '../../outside'],
+        'subfolder traversal' => ['en', 'admin/../../../outside'],
+        'namespace traversal' => ['en', '../..::outside'],
+        'locale traversal' => ['../..', 'outside'],
+        'json locale traversal' => ['../outside', 'json-file'],
+    ]);
+
+    it('refuses invalid locales for locale folder operations', function (): void {
+        /** @var string $testPath */
+        $testPath = $this->testPath;
+        $config = getTestConfig();
+        $writer = new TranslationFileWriter(new Filesystem(), new TranslationGroupNameParser($config), $testPath, $config);
+
+        expect(fn() => $writer->localeFolderExists('../en'))->toThrow(InvalidTranslationPathException::class);
+        expect(fn() => $writer->createLocaleFolder('../en'))->toThrow(InvalidTranslationPathException::class);
+        expect(is_dir(dirname($testPath) . '/en'))->toBeFalse();
     });
 });

@@ -8,6 +8,7 @@ use Brick\VarExporter\ExportException;
 use Brick\VarExporter\VarExporter;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
+use Statikbe\LaravelChainedTranslator\Exceptions\InvalidTranslationPathException;
 use Statikbe\LaravelChainedTranslator\Exceptions\SaveTranslationFileException;
 
 /**
@@ -87,18 +88,37 @@ class TranslationFileWriter
         return $this->config;
     }
 
+    /**
+     * @throws InvalidTranslationPathException
+     */
     public function localeFolderExists(string $locale): bool
     {
+        $this->nameParser->assertValidLocale($locale);
+
         return $this->files->exists($this->basePath . DIRECTORY_SEPARATOR . $locale);
     }
 
+    /**
+     * @throws InvalidTranslationPathException
+     */
     public function createLocaleFolder(string $locale): bool
     {
+        $this->nameParser->assertValidLocale($locale);
+
         return $this->files->makeDirectory($this->basePath . DIRECTORY_SEPARATOR . $locale, 0o755, true);
     }
 
+    /**
+     * Returns the file path of the translation group. The locale and group are validated before any
+     * path is built or directory is created, so the path cannot point outside the language directory.
+     *
+     * @throws InvalidTranslationPathException
+     */
     public function getGroupPath(string $locale, string $group, ?string $languagePath = null): string
     {
+        $this->nameParser->assertValidLocale($locale);
+        $this->nameParser->assertValidGroup($group);
+
         if ($this->nameParser->isJsonGroup($group)) {
             return ($languagePath ?? $this->basePath) . DIRECTORY_SEPARATOR . $locale . '.json';
         }

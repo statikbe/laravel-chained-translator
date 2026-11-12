@@ -7,6 +7,7 @@ use Illuminate\Support\Collection;
 use Statikbe\LaravelChainedTranslator\ChainedTranslationManager;
 use Statikbe\LaravelChainedTranslator\ChainedTranslatorConfig;
 use Statikbe\LaravelChainedTranslator\ChainLoader;
+use Statikbe\LaravelChainedTranslator\Exceptions\InvalidTranslationPathException;
 
 /**
  * @var string $testPath
@@ -148,3 +149,29 @@ it('handles file write errors gracefully', function (): void {
     $content = include $filePath;
     expect($content['key'])->toBe('value');
 });
+
+it('refuses to save a translation with a group outside the language directory', function (): void {
+    /** @var string $testPath */
+    $testPath = $this->testPath;
+    $languagePath = $testPath . '/lang-custom';
+    mkdir($languagePath . '/en', 0o755, true);
+    $manager = new ChainedTranslationManager($this->files, $this->loader, $languagePath, $this->config);
+
+    expect(fn() => $manager->save('en', '../../outside', 'key', 'value'))->toThrow(
+        InvalidTranslationPathException::class,
+    );
+    expect($testPath . '/outside.php')->not->toBeFile();
+});
+
+it('refuses to load translations with an invalid locale or group', function (string $locale, string $group): void {
+    $this->loader->shouldNotReceive('load');
+    $manager = new ChainedTranslationManager($this->files, $this->loader, $this->testPath, $this->config);
+
+    expect(fn() => $manager->getTranslationsForGroup($locale, $group))->toThrow(
+        InvalidTranslationPathException::class,
+    );
+})->with([
+    'group traversal' => ['en', '../../config/app'],
+    'locale traversal' => ['../../config', 'app'],
+    'namespace traversal' => ['en', '../..::app'],
+]);

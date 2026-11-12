@@ -8,6 +8,7 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
+use Statikbe\LaravelChainedTranslator\Exceptions\InvalidTranslationPathException;
 use Statikbe\LaravelChainedTranslator\Exceptions\SaveTranslationFileException;
 
 class ChainedTranslationManager
@@ -81,9 +82,14 @@ class ChainedTranslationManager
 
     /**
      * @return array<string, mixed>
+     * @throws InvalidTranslationPathException
      */
     public function getTranslationsForGroup(string $locale, string $group): array
     {
+        // The loaders build file paths from the locale and group, so validate them before loading.
+        $this->nameParser->assertValidLocale($locale);
+        $this->nameParser->assertValidGroup($group);
+
         if ($this->nameParser->isJsonGroup($group)) {
             return $this->compressHierarchicalTranslationsToDotNotation($this->translationLoader->load(
                 $locale,
