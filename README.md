@@ -82,6 +82,15 @@ Set to __false__: saved as dotted keys, f.e.
 #### 4. Custom json group name
 You can edit the group name of all json translations with the `json_group`.
 
+## Allowed locale and group names
+
+Locales and translation groups are used to build file paths, so they are validated before any translation file is read or written:
+
+- **Locales** may only contain letters, digits, `_` and `-` (e.g. `en`, `en_US`, `pt-BR`, `es-419`).
+- **Groups** may contain a namespace (`package::`) and subfolders (`admin/messages`). Every namespace, folder and file name may only contain letters, digits, `_`, `-` and `.`, and must not start with a `.`.
+
+An invalid locale or group throws a `Statikbe\LaravelChainedTranslator\Exceptions\InvalidTranslationPathException`.
+
 ## Credits
 
 We used [Joe Dixon's](https://github.com/joedixon) translation libraries as a source of technical expertise and inspiration:
