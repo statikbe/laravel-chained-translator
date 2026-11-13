@@ -50,15 +50,16 @@ class TranslationServiceProvider extends BaseTranslationServiceProvider
     /**
      * Get the services provided by the provider.
      *
-     * @return array
+     * @return array<int, string>
      */
     public function provides(): array
     {
-        return array_merge(parent::provides(), [
+        return [
+            ...parent::provides(),
             'chained-translator.path.lang.custom',
             ChainedTranslationManager::class,
             ChainedTranslatorConfig::class,
-        ]);
+        ];
     }
 
     private function getCustomLangPath(): string

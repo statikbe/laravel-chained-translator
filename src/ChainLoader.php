@@ -178,15 +178,14 @@ class ChainLoader implements Loader
     /**
      * Get an array of all the registered namespaces.
      *
-     * @return array<string, mixed>
+     * @return array<string, string>
      */
     public function namespaces(): array
     {
-        /** @var array<string, mixed> $namespaces */
+        /** @var array<string, string> $namespaces */
         $namespaces = [];
 
         foreach ($this->loaders as $loader) {
-            /** @var array<string, mixed> $namespaces */
             $namespaces += $loader->namespaces();
         }
 
