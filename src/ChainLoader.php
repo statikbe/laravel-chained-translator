@@ -186,7 +186,9 @@ class ChainLoader implements Loader
         $namespaces = [];
 
         foreach ($this->loaders as $loader) {
-            $namespaces += $loader->namespaces();
+            /** @var array<string, string> $loaderNamespaces */
+            $loaderNamespaces = $loader->namespaces();
+            $namespaces += $loaderNamespaces;
         }
 
         return $namespaces;
