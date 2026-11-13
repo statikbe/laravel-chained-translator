@@ -4,7 +4,7 @@ All notable changes to the __Laravel Chained Translator__ will be documented in 
 
 ## Version 2.7.0
 ### Security
-- Locales and translation group names are now validated before they are used to build translation file paths. Upgrading is strongly recommended. See [GHSA-xxxx-xxxx-xxxx](https://github.com/statikbe/laravel-chained-translator/security/advisories/GHSA-xxxx-xxxx-xxxx).
+- Locales and translation group names are now validated before they are used to build translation file paths. Upgrading is strongly recommended. See [GHSA-jg57-w2jq-7jmj](https://github.com/statikbe/laravel-chained-translator/security/advisories/GHSA-jg57-w2jq-7jmj).
 ### Changed
 - An invalid locale or translation group now throws `Statikbe\LaravelChainedTranslator\Exceptions\InvalidTranslationPathException` (an `InvalidArgumentException`) when saving, reading or loading translations. See [Allowed locale and group names](README.md#allowed-locale-and-group-names).
 ### Added
