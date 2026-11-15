@@ -2,6 +2,13 @@
 
 All notable changes to the __Laravel Chained Translator__ will be documented in this file.
 
+## Unreleased
+### Fixed
+- On Laravel 11+, the default loader now also reads the translations Laravel ships in `Illuminate/Translation/lang`, as Laravel's own loader does. Before, validation and pagination messages showed as bare keys (e.g. `validation.required`) unless the app's `lang/` directory had complete copies of the framework files.
+- The translation groups Laravel ships (`validation`, `auth`, `pagination`, `passwords`) are now listed for editing, also when the app's `lang/` directory has no file for them. Edits to these groups are now merged by `chainedtranslator:merge`; before, they stayed in the custom lang directory.
+### Changed
+- `chainedtranslator:merge` writes only the app's own lines plus the custom lines to plain (non-namespaced) groups, never the lines Laravel ships. An app's override-only file such as `lang/en/validation.php` stays override-only. Namespaced (package) groups and JSON translations are merged as before.
+
 ## Version 2.7.0
 ### Security
 - Locales and translation group names are now validated before they are used to build translation file paths. Upgrading is strongly recommended. See [GHSA-jg57-w2jq-7jmj](https://github.com/statikbe/laravel-chained-translator/security/advisories/GHSA-jg57-w2jq-7jmj).

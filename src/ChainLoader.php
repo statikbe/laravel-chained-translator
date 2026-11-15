@@ -40,11 +40,7 @@ class ChainLoader implements Loader
      */
     public function addLoader(Loader $loader, $prepend = false): void
     {
-        if ($prepend) {
-            array_unshift($this->loaders, $loader);
-        } else {
-            $this->loaders[] = $loader;
-        }
+        $this->loaders = $prepend ? [$loader, ...$this->loaders] : [...$this->loaders, $loader];
 
         $this->refreshPaths();
     }
@@ -186,9 +182,7 @@ class ChainLoader implements Loader
         $namespaces = [];
 
         foreach ($this->loaders as $loader) {
-            /** @var array<string, string> $loaderNamespaces */
-            $loaderNamespaces = $loader->namespaces();
-            $namespaces += $loaderNamespaces;
+            $namespaces += $loader->namespaces();
         }
 
         return $namespaces;

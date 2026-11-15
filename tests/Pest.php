@@ -3,23 +3,10 @@
 declare(strict_types=1);
 
 use Illuminate\Filesystem\Filesystem;
-use Orchestra\Testbench\TestCase;
-use Statikbe\LaravelChainedTranslator\BaseTranslationServiceProvider;
 use Statikbe\LaravelChainedTranslator\ChainedTranslatorConfig;
-use Statikbe\LaravelChainedTranslator\TranslationServiceProvider;
+use Statikbe\LaravelChainedTranslator\Tests\TestCase;
 
 uses(TestCase::class)->in(__DIR__);
-
-/**
- * Setup the test environment for package tests
- */
-function getPackageProviders($app): array
-{
-    return [
-        TranslationServiceProvider::class,
-        BaseTranslationServiceProvider::class,
-    ];
-}
 
 /**
  * Get the custom config for testing

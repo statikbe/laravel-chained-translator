@@ -9,7 +9,8 @@ use Illuminate\Support\Str;
 use Symfony\Component\Finder\SplFileInfo;
 
 /**
- * Discovers all translation groups available in the application's lang directory.
+ * Discovers all translation groups available in the application's lang directory and the
+ * translations Laravel ships itself (see FrameworkLangPath).
  */
 class TranslationGroupFinder
 {
@@ -27,14 +28,16 @@ class TranslationGroupFinder
     {
         $groups = [];
         $langDirPath = function_exists('lang_path') ? lang_path() : resource_path('lang');
-        $filesAndDirs = $this->files->allFiles($langDirPath);
+        $langDirPaths = array_filter([FrameworkLangPath::resolve(), $langDirPath]);
 
-        foreach ($filesAndDirs as $file) {
-            /* @var SplFileInfo $file */
-            $group = $this->resolveGroupFromFile($file);
+        foreach ($langDirPaths as $path) {
+            foreach ($this->files->allFiles($path) as $file) {
+                /* @var SplFileInfo $file */
+                $group = $this->resolveGroupFromFile($file);
 
-            if ($group !== null) {
-                $groups[$group] = $group;
+                if ($group !== null) {
+                    $groups[$group] = $group;
+                }
             }
         }
 

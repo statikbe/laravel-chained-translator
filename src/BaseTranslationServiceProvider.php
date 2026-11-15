@@ -60,15 +60,17 @@ class BaseTranslationServiceProvider extends LaravelTranslationServiceProvider
     {
         $this->app->singleton('translation.loader.default', static function (Application $app) {
             $files = $app->make(Filesystem::class);
-            $langPath = $app->langPath();
 
-            return new FileLoader($files, $langPath);
+            // Same paths, same order as Laravel's own translation loader: the framework's lines first,
+            // then the app's lang directory, which overrides them line by line.
+            $paths = array_values(array_filter([FrameworkLangPath::resolve(), $app->langPath()]));
+
+            return new FileLoader($files, $paths);
         });
 
         $this->app->singleton('translation.loader.custom', static function (Application $app) {
             $files = $app->make(Filesystem::class);
             // Use the container binding for custom path resolution
-            // @mago-expect analysis:invalid-type-cast
             $customPath = (string) $app->get('chained-translator.path.lang.custom');
 
             return new NonPackageFileLoader($files, $customPath);
@@ -77,10 +79,10 @@ class BaseTranslationServiceProvider extends LaravelTranslationServiceProvider
         //override the Laravel translation loader singleton:
         $this->app->singleton('translation.loader', static function (Application $app) {
             $loader = new ChainLoader();
+            /** @var TranslationLoader $customLoader */
             $customLoader = $app->make('translation.loader.custom');
-            assert($customLoader instanceof TranslationLoader, 'Custom loader must implement TranslationLoader.');
+            /** @var TranslationLoader $defaultLoader */
             $defaultLoader = $app->make('translation.loader.default');
-            assert($defaultLoader instanceof TranslationLoader, 'Default loader must implement TranslationLoader.');
             $loader->addLoader($customLoader);
             $loader->addLoader($defaultLoader);
 

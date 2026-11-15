@@ -6,6 +6,7 @@ namespace Statikbe\LaravelChainedTranslator;
 
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
+use Illuminate\Translation\FileLoader;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
 use Statikbe\LaravelChainedTranslator\Exceptions\InvalidTranslationPathException;
@@ -16,6 +17,7 @@ class ChainedTranslationManager
     private readonly TranslationGroupFinder $groupFinder;
     private readonly TranslationFileWriter $fileWriter;
     private readonly TranslationGroupNameParser $nameParser;
+    private readonly Filesystem $filesystem;
 
     /**
      * The filesystem instance.
@@ -41,9 +43,12 @@ class ChainedTranslationManager
         ?ChainedTranslatorConfig $config = null,
     ) {
         // Keep references for backward compatibility with subclasses
+        // @mago-expect analysis:deprecated-property
         $this->files = $files;
+        // @mago-expect analysis:deprecated-property
         $this->path = $path;
 
+        $this->filesystem = $files;
         $config ??= new ChainedTranslatorConfig();
         $this->nameParser = new TranslationGroupNameParser($config);
         $this->groupFinder = new TranslationGroupFinder($files, $this->nameParser);
@@ -119,7 +124,7 @@ class ChainedTranslationManager
         }
 
         foreach ($this->groupFinder->findAll() as $group) {
-            $translations = $this->loadTranslationsForGroup($locale, $group);
+            $translations = $this->loadTranslationsForGroup($locale, $group, $defaultLangPath);
 
             if ($translations->isNotEmpty()) {
                 $this->fileWriter->writeGroupTranslations($locale, $group, $translations, $defaultLangPath);
@@ -136,9 +141,11 @@ class ChainedTranslationManager
     }
 
     /**
+     * Loads the translations of a group that merging writes to the default lang directory.
+     *
      * @return Collection<string, mixed>
      */
-    private function loadTranslationsForGroup(string $locale, string $group): Collection
+    private function loadTranslationsForGroup(string $locale, string $group, string $defaultLangPath): Collection
     {
         if ($this->nameParser->isJsonGroup($group)) {
             return collect($this->translationLoader->load($locale, '*', '*'));
@@ -146,7 +153,17 @@ class ChainedTranslationManager
 
         [$namespace, $groupName] = $this->nameParser->extractNamespace($group);
 
-        return collect($this->translationLoader->load($locale, $groupName, $namespace));
+        if ($namespace !== null) {
+            return collect($this->translationLoader->load($locale, $groupName, $namespace));
+        }
+
+        // Only the lines the app owns: its own lang file with the custom lines on top. Loading through the
+        // chain would also return the lines Laravel ships (see FrameworkLangPath) and copy them into the app.
+        /** @var array<string, mixed> $appTranslations */
+        $appTranslations = (new FileLoader($this->filesystem, $defaultLangPath))->load($locale, $groupName);
+        $translations = array_replace_recursive($appTranslations, $this->getCustomTranslations($locale, $group)->all());
+
+        return collect($translations);
     }
 
     /**
