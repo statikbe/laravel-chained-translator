@@ -21,27 +21,29 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
     strategy:
-      fail-fast: true
+      # Run all jobs, so one failing job does not hide the results of the others.
+      fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        php: [8.2, 8.3, 8.4]
-        laravel: [11.*, 12.*, 13.*]
+        php: [8.3, 8.4]
+        laravel: [12.*, 13.*]
         stability: [prefer-stable]
-        exclude:
-          - laravel: 12.*
-            php: "8.2"
-          - laravel: 13.*
-            php: "8.2"
         include:
-          - laravel: 11.*
-            testbench: 9.*
-            pest: 3.*
           - laravel: 12.*
             testbench: 10.*
             pest: 4.*
           - laravel: 13.*
             testbench: 11.*
             pest: 4.*
+          # Pest 4 requires PHP 8.3, so PHP 8.2 is tested with Pest 3.
+          - os: ubuntu-latest
+            php: 8.2
+            laravel: 12.*
+            stability: prefer-stable
+            testbench: 10.*
+            pest: 3.*
+        # Laravel 11 is still supported, but no longer tested: Composer blocks installing it, as it has
+        # security advisories that are not fixed in 11.x anymore.
 
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
 
