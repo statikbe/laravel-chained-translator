@@ -7,6 +7,7 @@ namespace Statikbe\LaravelChainedTranslator\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Statikbe\LaravelChainedTranslator\ChainedTranslationManager;
+use Statikbe\LaravelChainedTranslator\Exceptions\InvalidTranslationPathException;
 use Statikbe\LaravelChainedTranslator\Exceptions\SaveTranslationFileException;
 
 class MergeTranslationsCommand extends Command
@@ -27,25 +28,28 @@ class MergeTranslationsCommand extends Command
      * Execute the console command.
      *
      * @param ChainedTranslationManager $chainedTranslationManager
-     * @return mixed
+     * @return int The exit code: Command::SUCCESS or Command::FAILURE.
      */
-    public function handle(ChainedTranslationManager $chainedTranslationManager): mixed
+    public function handle(ChainedTranslationManager $chainedTranslationManager): int
     {
         $locale = $this->argument('locale');
 
         if (!is_string($locale)) {
             $this->error('The locale argument must be a string.');
-            return false;
+            return self::FAILURE;
         }
 
         try {
             $chainedTranslationManager->mergeChainedTranslationsIntoDefaultTranslations($locale);
+        } catch (InvalidTranslationPathException $ex) {
+            $this->error($ex->getMessage());
+            return self::FAILURE;
         } catch (SaveTranslationFileException $ex) {
             Log::error($ex);
             $this->error($ex->getMessage());
-            return false;
+            return self::FAILURE;
         }
 
-        return true;
+        return self::SUCCESS;
     }
 }

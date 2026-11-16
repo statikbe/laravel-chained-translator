@@ -284,6 +284,7 @@ describe('TranslationFileWriter', function (): void {
         $files->shouldReceive('exists')->andReturn(false);
         $files->shouldReceive('makeDirectory')->andReturn(true);
         $files->shouldReceive('put')->andReturn(false);
+        $files->shouldReceive('delete');
 
         $config = getTestConfig(['group_keys_in_array' => false]);
         $parser = new TranslationGroupNameParser($config);
@@ -311,12 +312,11 @@ describe('TranslationFileWriter', function (): void {
         $parser = new TranslationGroupNameParser($config);
         $writer = new TranslationFileWriter(new Filesystem(), $parser, $languagePath, $config);
 
-        expect(fn() => $writer->readGroupTranslations($locale, $group))->toThrow(
-            InvalidTranslationPathException::class,
-        );
-        expect(fn() => $writer->writeGroupTranslations($locale, $group, collect(['key' => 'value'])))->toThrow(
-            InvalidTranslationPathException::class,
-        );
+        expect(fn() => $writer->readGroupTranslations($locale, $group))
+            ->toThrow(InvalidTranslationPathException::class);
+        expect(fn() => $writer->writeGroupTranslations($locale, $group, collect([
+            'key' => 'value',
+        ])))->toThrow(InvalidTranslationPathException::class);
         expect(file_get_contents($outsideFile))->toBe('<?php return ["original" => "value"];');
         expect(array_values(array_diff(scandir($testPath), ['.', '..'])))->toBe(['lang-custom', 'outside.php']);
         expect(array_values(array_diff(scandir($languagePath), ['.', '..'])))->toBe(['en']);
@@ -332,10 +332,82 @@ describe('TranslationFileWriter', function (): void {
         /** @var string $testPath */
         $testPath = $this->testPath;
         $config = getTestConfig();
-        $writer = new TranslationFileWriter(new Filesystem(), new TranslationGroupNameParser($config), $testPath, $config);
+        $writer = new TranslationFileWriter(
+            new Filesystem(),
+            new TranslationGroupNameParser($config),
+            $testPath,
+            $config,
+        );
 
         expect(fn() => $writer->localeFolderExists('../en'))->toThrow(InvalidTranslationPathException::class);
         expect(fn() => $writer->createLocaleFolder('../en'))->toThrow(InvalidTranslationPathException::class);
         expect(is_dir(dirname($testPath) . '/en'))->toBeFalse();
+    });
+
+    it('refuses to read a custom JSON file it cannot parse', function (string $contents): void {
+        /** @var string $testPath */
+        $testPath = $this->testPath;
+        file_put_contents($testPath . '/en.json', $contents);
+        $parser = new TranslationGroupNameParser(getTestConfig());
+        $writer = new TranslationFileWriter(new Filesystem(), $parser, $testPath, getTestConfig());
+
+        expect(fn() => $writer->readGroupTranslations('en', 'json-file'))->toThrow(SaveTranslationFileException::class);
+    })->with([
+        'trailing comma' => ['{"hello": "Hello",}'],
+        'not an object' => ['"hello"'],
+    ]);
+
+    it('reads an empty custom JSON file as no translations', function (): void {
+        /** @var string $testPath */
+        $testPath = $this->testPath;
+        file_put_contents($testPath . '/en.json', "  \n");
+        $parser = new TranslationGroupNameParser(getTestConfig());
+        $writer = new TranslationFileWriter(new Filesystem(), $parser, $testPath, getTestConfig());
+
+        expect($writer->readGroupTranslations('en', 'json-file')->all())->toBe([]);
+    });
+
+    it('refuses to read a custom PHP file that does not return an array', function (): void {
+        /** @var string $testPath */
+        $testPath = $this->testPath;
+        mkdir($testPath . '/en');
+        file_put_contents($testPath . '/en/messages.php', '<?php return "hello";');
+        $parser = new TranslationGroupNameParser(getTestConfig());
+        $writer = new TranslationFileWriter(new Filesystem(), $parser, $testPath, getTestConfig());
+
+        expect(fn() => $writer->readGroupTranslations('en', 'messages'))->toThrow(SaveTranslationFileException::class);
+    });
+
+    it('replaces the file instead of writing into it, so readers never see half a file', function (): void {
+        /** @var string $testPath */
+        $testPath = $this->testPath;
+        mkdir($testPath . '/en');
+        file_put_contents($testPath . '/en/messages.php', "<?php return ['old' => 'Old'];");
+        $inode = fileinode($testPath . '/en/messages.php');
+        $writer = new TranslationFileWriter(new Filesystem(), new TranslationGroupNameParser(), $testPath);
+
+        $writer->writeGroupTranslations('en', 'messages', collect(['new' => 'New']));
+
+        clearstatcache();
+        expect(fileinode($testPath . '/en/messages.php'))->not->toBe($inode);
+        expect(require $testPath . '/en/messages.php')->toBe(['new' => 'New']);
+        expect(glob($testPath . '/en/*'))->toBe([$testPath . '/en/messages.php']);
+    });
+
+    it('keeps the old file and removes the temporary file when replacing it fails', function (): void {
+        /** @var string $testPath */
+        $testPath = $this->testPath;
+        mkdir($testPath . '/en');
+        file_put_contents($testPath . '/en/messages.php', "<?php return ['old' => 'Old'];");
+        /** @var Filesystem&\Mockery\MockInterface $files */
+        $files = Mockery::mock(Filesystem::class)->makePartial();
+        $files->shouldReceive('move')->andReturn(false);
+        $writer = new TranslationFileWriter($files, new TranslationGroupNameParser(), $testPath);
+
+        expect(fn() => $writer->writeGroupTranslations('en', 'messages', collect([
+            'new' => 'New',
+        ])))->toThrow(SaveTranslationFileException::class);
+        expect(file_get_contents($testPath . '/en/messages.php'))->toBe("<?php return ['old' => 'Old'];");
+        expect(glob($testPath . '/en/*'))->toBe([$testPath . '/en/messages.php']);
     });
 });

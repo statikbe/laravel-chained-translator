@@ -20,17 +20,35 @@ class TranslationGroupFinder
     ) {}
 
     /**
-     * Returns a deduplicated list of all translation group identifiers.
+     * Returns a deduplicated list of all translation group identifiers in the app's lang directory and the
+     * translations Laravel ships itself.
      *
      * @return array<int, string>
      */
     public function findAll(): array
     {
+        $langDirPath = lang_path();
+
+        return $this->findIn([FrameworkLangPath::resolve(), $langDirPath]);
+    }
+
+    /**
+     * Returns a deduplicated list of the translation group identifiers in the given lang directories.
+     * Directories that do not exist are skipped: Laravel 11+ apps have no lang directory until
+     * translations are published.
+     *
+     * @param array<int, string|null> $langDirPaths
+     * @return array<int, string>
+     */
+    public function findIn(array $langDirPaths): array
+    {
         $groups = [];
-        $langDirPath = function_exists('lang_path') ? lang_path() : resource_path('lang');
-        $langDirPaths = array_filter([FrameworkLangPath::resolve(), $langDirPath]);
 
         foreach ($langDirPaths as $path) {
+            if ($path === null || !is_dir($path)) {
+                continue;
+            }
+
             foreach ($this->files->allFiles($path) as $file) {
                 /* @var SplFileInfo $file */
                 $group = $this->resolveGroupFromFile($file);
@@ -54,11 +72,12 @@ class TranslationGroupFinder
             return null;
         }
 
-        $relativePath = $file->getRelativePath();
-        $vendorPath = strstr($relativePath, 'vendor');
+        $relativePath = str_replace('\\', '/', $file->getRelativePath());
 
-        if ($vendorPath !== false) {
-            return $this->resolveVendorGroup($file, $vendorPath);
+        // Package translations live in lang/vendor/{package}/{locale}/. A vendor folder elsewhere,
+        // e.g. lang/en/vendors/ or lang/en/admin/vendor/, holds regular groups.
+        if ($relativePath === 'vendor' || str_starts_with($relativePath, 'vendor/')) {
+            return $this->resolveVendorGroup($file, $relativePath);
         }
 
         return $this->resolveRegularGroup($file, $relativePath);
@@ -97,11 +116,11 @@ class TranslationGroupFinder
             return $this->nameParser->getJsonGroupName();
         }
 
-        if (!self::isPhpFile($file->getRelativePathname())) {
+        // PHP groups are only loaded from lang/{locale}/, not from the root of the lang directory.
+        if (!self::isPhpFile($file->getRelativePathname()) || $relativePath === '') {
             return null;
         }
 
-        $relativePath = str_replace('\\', '/', $relativePath);
         $options = explode('/', $relativePath);
         unset($options[0]);
         $subFolders = implode('/', array_filter($options));

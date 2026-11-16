@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Statikbe\LaravelChainedTranslator;
 
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Filesystem\LockableFile;
 use Illuminate\Support\Collection;
 use Illuminate\Translation\FileLoader;
 use RecursiveArrayIterator;
@@ -14,10 +15,16 @@ use Statikbe\LaravelChainedTranslator\Exceptions\SaveTranslationFileException;
 
 class ChainedTranslationManager
 {
+    /**
+     * The file in the custom lang directory that saves lock, so they do not overwrite each other.
+     */
+    private const LOCK_FILE = '.lock';
+
     private readonly TranslationGroupFinder $groupFinder;
     private readonly TranslationFileWriter $fileWriter;
     private readonly TranslationGroupNameParser $nameParser;
     private readonly Filesystem $filesystem;
+    private readonly string $customLangPath;
 
     /**
      * The filesystem instance.
@@ -49,6 +56,7 @@ class ChainedTranslationManager
         $this->path = $path;
 
         $this->filesystem = $files;
+        $this->customLangPath = $path;
         $config ??= new ChainedTranslatorConfig();
         $this->nameParser = new TranslationGroupNameParser($config);
         $this->groupFinder = new TranslationGroupFinder($files, $this->nameParser);
@@ -70,9 +78,18 @@ class ChainedTranslationManager
      */
     public function save(string $locale, string $group, string $key, string $translation): void
     {
-        $translations = $this->getCustomTranslations($locale, $group);
-        $translations->put($key, $translation);
-        $this->fileWriter->writeGroupTranslations($locale, $group, $translations);
+        // Saving rewrites the whole file. The lock makes a save in another request wait until this one is
+        // written, so it reads this translation instead of dropping it.
+        $lock = new LockableFile($this->customLangPath . DIRECTORY_SEPARATOR . self::LOCK_FILE, 'c');
+
+        try {
+            $lock->getExclusiveLock(block: true);
+            $translations = $this->getCustomTranslations($locale, $group);
+            $translations->put($key, $translation);
+            $this->fileWriter->writeGroupTranslations($locale, $group, $translations);
+        } finally {
+            $lock->close();
+        }
     }
 
     /**
@@ -117,13 +134,16 @@ class ChainedTranslationManager
      */
     public function mergeChainedTranslationsIntoDefaultTranslations(string $locale): void
     {
-        $defaultLangPath = function_exists('lang_path') ? lang_path() : resource_path('lang');
+        $this->nameParser->assertValidLocale($locale);
+        $defaultLangPath = lang_path();
 
-        if (!$this->fileWriter->localeFolderExists($locale)) {
-            $this->fileWriter->createLocaleFolder($locale);
-        }
+        // Also the groups that only have custom translations, e.g. JSON translations in an app without a lang directory.
+        $groups = array_unique([
+            ...$this->groupFinder->findAll(),
+            ...$this->groupFinder->findIn([$this->customLangPath]),
+        ]);
 
-        foreach ($this->groupFinder->findAll() as $group) {
+        foreach ($groups as $group) {
             $translations = $this->loadTranslationsForGroup($locale, $group, $defaultLangPath);
 
             if ($translations->isNotEmpty()) {
@@ -157,11 +177,16 @@ class ChainedTranslationManager
             return collect($this->translationLoader->load($locale, $groupName, $namespace));
         }
 
-        // Only the lines the app owns: its own lang file with the custom lines on top. Loading through the
-        // chain would also return the lines Laravel ships (see FrameworkLangPath) and copy them into the app.
+        // Only the lines the app owns: its own lang file with the custom lines placed inside its nested arrays
+        // (see TranslationLines), so each line is in the file once. Loading through the chain would also return
+        // the lines Laravel ships (see FrameworkLangPath) and copy them into the app.
         /** @var array<string, mixed> $appTranslations */
         $appTranslations = (new FileLoader($this->filesystem, $defaultLangPath))->load($locale, $groupName);
-        $translations = array_replace_recursive($appTranslations, $this->getCustomTranslations($locale, $group)->all());
+        /** @var array<string, mixed> $translations */
+        $translations = TranslationLines::merge(
+            TranslationLines::undot($appTranslations),
+            TranslationLines::undot($this->getCustomTranslations($locale, $group)->all()),
+        );
 
         return collect($translations);
     }

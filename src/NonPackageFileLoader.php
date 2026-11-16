@@ -6,8 +6,32 @@ namespace Statikbe\LaravelChainedTranslator;
 
 use Illuminate\Translation\FileLoader;
 
+/**
+ * Loads only the custom translations, from the custom lang directory.
+ *
+ * Paths that packages add are ignored: this loader comes first in the chain, so loading package translations
+ * here would let them override the app's own lang directory.
+ */
 class NonPackageFileLoader extends FileLoader
 {
+    /**
+     * @param string $path
+     * @return void
+     */
+    public function addPath($path): void
+    {
+        // Ignored, see the class description.
+    }
+
+    /**
+     * @param string $path
+     * @return void
+     */
+    public function addJsonPath($path): void
+    {
+        // Ignored, see the class description.
+    }
+
     /**
      * @param string $locale
      * @param string $group

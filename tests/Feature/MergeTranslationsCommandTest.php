@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Console\Command;
 use Statikbe\LaravelChainedTranslator\ChainedTranslationManager;
 use Statikbe\LaravelChainedTranslator\Console\Commands\MergeTranslationsCommand;
 use Statikbe\LaravelChainedTranslator\Exceptions\SaveTranslationFileException;
@@ -39,7 +40,7 @@ describe('MergeTranslationsCommand', function () {
 
         $result = $command->handle($manager);
 
-        expect($result)->toBeFalse();
+        expect($result)->toBe(Command::FAILURE);
     });
 
     it('successfully merges translations for valid locale', function () {
@@ -52,7 +53,7 @@ describe('MergeTranslationsCommand', function () {
 
         $result = $command->handle($manager);
 
-        expect($result)->toBeTrue();
+        expect($result)->toBe(Command::SUCCESS);
     });
 
     it('handles save exception gracefully', function () {
@@ -69,6 +70,34 @@ describe('MergeTranslationsCommand', function () {
 
         $result = $command->handle($manager);
 
-        expect($result)->toBeFalse();
+        expect($result)->toBe(Command::FAILURE);
+    });
+
+    it('exits with 0 when the merge succeeds', function () {
+        $manager = Mockery::mock(ChainedTranslationManager::class);
+        $manager->shouldReceive('mergeChainedTranslationsIntoDefaultTranslations')->with('en')->once();
+        $this->app->instance(ChainedTranslationManager::class, $manager);
+
+        $this->artisan('chainedtranslator:merge', ['locale' => 'en'])->assertExitCode(0);
+    });
+
+    it('exits with 1 and shows the error when the merge fails', function () {
+        $manager = Mockery::mock(ChainedTranslationManager::class);
+        $manager
+            ->shouldReceive('mergeChainedTranslationsIntoDefaultTranslations')
+            ->andThrow(new SaveTranslationFileException('Save failed'));
+        $this->app->instance(ChainedTranslationManager::class, $manager);
+
+        $this
+            ->artisan('chainedtranslator:merge', ['locale' => 'en'])
+            ->expectsOutputToContain('Save failed')
+            ->assertExitCode(1);
+    });
+
+    it('exits with 1 and shows the error for an invalid locale', function () {
+        $this
+            ->artisan('chainedtranslator:merge', ['locale' => '../config'])
+            ->expectsOutputToContain('The locale "../config" is not a valid locale.')
+            ->assertExitCode(1);
     });
 });

@@ -6,6 +6,7 @@ namespace Statikbe\LaravelChainedTranslator;
 
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Support\Arr;
+use Illuminate\Translation\FileLoader;
 use ReflectionClass;
 
 /**
@@ -133,15 +134,30 @@ class ChainLoader implements Loader
      */
     public function load($locale, $group, $namespace = null): array
     {
-        /** @var array<string, mixed> $messages */
-        $messages = [];
+        // From the last loader to the first: each loader overrides the ones after it.
+        $linesPerLoader = array_map(static fn(Loader $loader): array => $loader->load(
+            $locale,
+            $group,
+            $namespace,
+        ), array_reverse($this->loaders));
 
-        foreach ($this->loaders as $loader) {
-            /** @var array<string, mixed> $messages */
-            $messages = array_replace_recursive($loader->load($locale, $group, $namespace), $messages);
+        // JSON translations: keys are sentences, not nested keys.
+        if ($group === '*' && $namespace === '*') {
+            /** @var array<string, mixed> */
+            return array_replace_recursive([], ...$linesPerLoader);
         }
 
-        return $messages;
+        // Each loader places its lines inside the nested arrays of the ones after it, so lines read as arrays,
+        // e.g. validation.attributes, include the overrides. See TranslationLines.
+        /** @var array<string, mixed> */
+        return array_reduce(
+            $linesPerLoader,
+            static fn(array $messages, array $lines): array => TranslationLines::merge(
+                $messages,
+                TranslationLines::undot($lines),
+            ),
+            [],
+        );
     }
 
     /**
@@ -156,6 +172,23 @@ class ChainLoader implements Loader
         collect($this->loaders)->each(static function (Loader $loader) use ($namespace, $hint): void {
             $loader->addNamespace($namespace, $hint);
         });
+    }
+
+    /**
+     * Add a new path to the loader, e.g. from a package's loadTranslationsFrom() without a namespace.
+     *
+     * Only passed to file loaders: addPath() is not part of the Loader contract.
+     *
+     * @param  string  $path
+     * @return void
+     */
+    public function addPath($path): void
+    {
+        collect($this->loaders)
+            ->whereInstanceOf(FileLoader::class)
+            ->each(static fn(FileLoader $loader) => $loader->addPath($path));
+
+        $this->refreshPaths();
     }
 
     /**

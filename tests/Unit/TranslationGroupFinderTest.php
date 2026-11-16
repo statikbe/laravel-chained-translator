@@ -55,7 +55,7 @@ describe('TranslationGroupFinder', function (): void {
         $finder = new TranslationGroupFinder($this->files, $this->parser);
         $groups = $finder->findAll();
 
-        $messagesCount = count(array_filter($groups, fn ($g) => $g === 'messages'));
+        $messagesCount = count(array_filter($groups, fn($g) => $g === 'messages'));
         expect($messagesCount)->toBe(1);
     });
 
@@ -114,5 +114,35 @@ describe('TranslationGroupFinder', function (): void {
         foreach ($groups as $group) {
             expect($group)->not->toContain('\\');
         }
+    });
+
+    it('does not fail when the app has no lang directory', function (): void {
+        // Laravel 11+ apps have no lang directory until translations are published.
+        app()->useLangPath($this->tempDir . '/missing');
+
+        $finder = new TranslationGroupFinder($this->files, $this->parser);
+
+        expect($finder->findAll())->not->toContain('messages');
+    });
+
+    it('only treats the top-level vendor directory as package translations', function (): void {
+        createTestDirectory($this->tempDir . '/en/vendors');
+        createTestDirectory($this->tempDir . '/en/admin/vendor');
+        file_put_contents($this->tempDir . '/en/vendors/list.php', '<?php return [];');
+        file_put_contents($this->tempDir . '/en/admin/vendor/list.php', '<?php return [];');
+
+        $groups = (new TranslationGroupFinder($this->files, $this->parser))->findAll();
+
+        expect($groups)->toContain('vendors/list', 'admin/vendor/list');
+        expect($groups)->not->toContain('vendors::list');
+    });
+
+    it('ignores PHP files outside a locale directory', function (): void {
+        // Laravel only loads groups from lang/{locale}/, so lang/notes.php is not a translation group.
+        file_put_contents($this->tempDir . '/notes.php', '<?php return [];');
+
+        $groups = (new TranslationGroupFinder($this->files, $this->parser))->findAll();
+
+        expect($groups)->not->toContain('notes');
     });
 });

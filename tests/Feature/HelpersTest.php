@@ -83,5 +83,46 @@ describe('Helper Functions', function () {
 
             expect(ct_array_undot($input))->toBe($expected);
         });
+
+        it('merges dotted keys into a nested array that comes later', function () {
+            $input = [
+                'between.numeric' => 'Custom numeric',
+                'between' => ['numeric' => 'App numeric', 'string' => 'App string'],
+            ];
+
+            expect(ct_array_undot($input))->toBe([
+                'between' => ['numeric' => 'Custom numeric', 'string' => 'App string'],
+            ]);
+        });
+
+        it('merges dotted keys into a nested array without dropping its other lines', function () {
+            $input = [
+                'between' => ['numeric' => 'App numeric', 'string' => 'App string'],
+                'between.numeric' => 'Custom numeric',
+            ];
+
+            expect(ct_array_undot($input))->toBe([
+                'between' => ['numeric' => 'Custom numeric', 'string' => 'App string'],
+            ]);
+        });
+
+        it('keeps a dotted key flat when its parent is a translation line', function () {
+            // Nesting would replace the line 'between' with an array.
+            $input = ['between' => 'Between', 'between.numeric' => 'Numeric', 'between.size.max' => 'Max'];
+
+            expect(ct_array_undot($input))->toBe($input);
+        });
+
+        it('keeps keys with empty segments flat', function () {
+            $input = ['etc.' => 'Etc.', '.hidden' => 'Hidden', 'a..b' => 'A b'];
+
+            expect(ct_array_undot($input))->toBe($input);
+        });
+
+        it('returns nested input unchanged', function () {
+            $input = ['a' => ['b' => 'value', 'c' => ['d' => 'deep']]];
+
+            expect(ct_array_undot($input))->toBe($input);
+        });
     });
 });

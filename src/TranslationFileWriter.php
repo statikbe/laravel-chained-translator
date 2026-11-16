@@ -28,7 +28,11 @@ class TranslationFileWriter
     }
 
     /**
+     * Reads the translations of a group. A file that cannot be parsed is reported instead of read as empty,
+     * because saving a translation writes the whole file back and would drop all its other translations.
+     *
      * @return Collection<string, mixed>
+     * @throws SaveTranslationFileException
      */
     public function readGroupTranslations(string $locale, string $group): Collection
     {
@@ -39,18 +43,23 @@ class TranslationFileWriter
             return collect([]);
         }
 
-        if ($this->nameParser->isJsonGroup($group)) {
-            $raw = file_get_contents($groupPath);
-            /** @var array<string, mixed> $jsonData */
-            $jsonData = json_decode($raw !== false ? $raw : '{}', true) ?? [];
+        $contents = $this->nameParser->isJsonGroup($group) ? $this->files->get($groupPath) : null;
+        // Invalid JSON decodes to null. An empty JSON file has no translations.
+        // @mago-expect analysis:mixed-assignment
+        $translations = match (true) {
+            $contents === null => $this->files->getRequire($groupPath),
+            trim($contents) === '' => [],
+            default => json_decode($contents, true),
+        };
 
-            return collect($jsonData);
+        if (!is_array($translations)) {
+            throw new SaveTranslationFileException(
+                "The translation file {$groupPath} does not contain a list of translations. Fix or remove it first.",
+            );
         }
 
-        /** @var array<string, mixed> $fileData */
-        $fileData = $this->files->getRequire($groupPath);
-
-        return collect($fileData);
+        /** @var Collection<string, mixed> */
+        return collect($translations);
     }
 
     /**
@@ -64,15 +73,21 @@ class TranslationFileWriter
         ?string $languagePath = null,
     ): void {
         $groupPath = $this->getGroupPath($locale, $group, $languagePath);
+        // Only writing creates directories, reading a group that does not exist must not.
+        $this->ensureDirectoryExists(dirname($groupPath));
         $translationsArray = $translations->toArray();
 
         $contents = $this->nameParser->isJsonGroup($group)
             ? $this->encodeJsonTranslations($translationsArray)
             : $this->encodePhpTranslations($translationsArray);
 
-        $success = $this->files->put($groupPath, $contents);
+        // Written to a temporary file that then replaces the file, so a request loading the translations
+        // meanwhile reads the old or the new file, never half a file.
+        $tempPath = $groupPath . '.' . bin2hex(random_bytes(8)) . '.tmp';
 
-        if ($success === false) {
+        if ($this->files->put($tempPath, $contents) === false || !$this->files->move($tempPath, $groupPath)) {
+            $this->files->delete($tempPath);
+
             throw new SaveTranslationFileException("The translation file {$groupPath} could not be saved.");
         }
 
@@ -144,8 +159,6 @@ class TranslationFileWriter
         $subFolders = $subFolders !== null ? str_replace('/', DIRECTORY_SEPARATOR, $subFolders) : null;
 
         $groupBasePath = implode(DIRECTORY_SEPARATOR, array_filter([$languagePath, $namespace, $locale, $subFolders]));
-
-        $this->ensureDirectoryExists($groupBasePath);
 
         return [$groupBasePath, $group];
     }

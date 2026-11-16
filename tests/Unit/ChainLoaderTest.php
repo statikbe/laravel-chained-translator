@@ -250,3 +250,27 @@ describe('ChainLoader', function (): void {
         expect($result['level1']['level2']['key'])->toBe('original');
     });
 });
+
+it('places dotted keys of a loader inside the nested lines of the loaders after it', function (): void {
+    $chain = new ChainLoader();
+    $chain->addLoader(createMockLoader(['en' => ['validation' => ['attributes.email' => 'Custom e-mail']]]));
+    $chain->addLoader(createMockLoader([
+        'en' => [
+            'validation' => [
+                'attributes' => ['email' => 'App e-mail', 'name' => 'App name'],
+            ],
+        ],
+    ]));
+
+    expect($chain->load('en', 'validation'))->toBe([
+        'attributes' => ['email' => 'Custom e-mail', 'name' => 'App name'],
+    ]);
+});
+
+it('does not nest the keys of JSON translations', function (): void {
+    $chain = new ChainLoader();
+    $chain->addLoader(createMockLoader(['en' => ['*::*' => ['menu.home' => 'Custom home']]]));
+    $chain->addLoader(createMockLoader(['en' => ['*::*' => ['menu.home' => 'Home', 'menu.about' => 'About']]]));
+
+    expect($chain->load('en', '*', '*'))->toBe(['menu.home' => 'Custom home', 'menu.about' => 'About']);
+});
